@@ -81,6 +81,29 @@ class DataEntityField(Base):
 
     entity = relationship("DataEntity", back_populates="fields", foreign_keys=[entity_id])
 
+class RawDataEntity(Base):
+    __tablename__ = "raw_data_entities"
+
+    id = Column(String, primary_key=True, index=True)
+    created_time = Column(String)
+    source_type = Column(String) # "manual" or "file"
+    user = Column(String) # user id or name
+    data_entity_name = Column(String)
+
+    fields = relationship("RawDataEntityField", back_populates="entity", cascade="all, delete-orphan")
+
+class RawDataEntityField(Base):
+    __tablename__ = "raw_data_entity_fields"
+
+    id = Column(String, primary_key=True, index=True)
+    created_time = Column(String)
+    raw_data_entity_id = Column(String, ForeignKey("raw_data_entities.id"))
+    field_name = Column(String)
+    field_value = Column(String)
+    rating = Column(String)
+
+    entity = relationship("RawDataEntity", back_populates="fields")
+
 class StandardValue(Base):
     __tablename__ = "standard_values"
 

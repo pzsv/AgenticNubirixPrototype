@@ -22,6 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'home':
                 renderHome();
                 break;
+            case 'prepare-old':
+                await renderPrepareOld();
+                break;
             case 'prepare':
                 await renderPrepare();
                 break;
@@ -43,6 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'data-entities':
                 await renderDataEntities();
                 break;
+            case 'raw-data':
+                await renderRawDataEntities();
+                break;
             default:
                 contentArea.innerHTML = '<h2>Module not found</h2>';
         }
@@ -56,14 +62,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const html = `
             <div class="container text-center py-5">
                 <h1 class="fw-bold">Workload Overview</h1>
-                <p class="text-muted mb-5">Understand your data centre estate in five structured phases.<br>Follow the process from discovery to evaluation.</p>
+                <p class="text-muted mb-5">Understand your data centre estate in six structured phases.<br>Follow the process from discovery to evaluation.</p>
                 
                 <div class="row g-4 mb-5">
                     <div class="col">
-                        <div class="phase-card prepare">
+                        <div class="phase-card prepare-old">
                             <div class="phase-icon"><i class="bi bi-search"></i></div>
+                            <h5 class="fw-bold">Prepare_OLD</h5>
+                            <p class="small text-muted">Legacy data discovery and ingestion workflow.</p>
+                            <a href="#" class="btn-start-phase" onclick="document.querySelector('[data-module=\\'prepare-old\\']').click()">Start Phase &rarr;</a>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="phase-card prepare">
+                            <div class="phase-icon"><i class="bi bi-speedometer2"></i></div>
                             <h5 class="fw-bold">Prepare</h5>
-                            <p class="small text-muted">Discover, inventory and normalise your data assets.</p>
+                            <p class="small text-muted">Modernized data discovery and ingestion platform.</p>
                             <a href="#" class="btn-start-phase" onclick="document.querySelector('[data-module=\\'prepare\\']').click()">Start Phase &rarr;</a>
                         </div>
                     </div>
@@ -113,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         contentArea.innerHTML = html;
     }
 
-    // --- Module: Prepare ---
+    // --- Module: Prepare (Modernized) ---
     let prepareState = {
         currentStep: 'overview'
     };
@@ -121,34 +135,38 @@ document.addEventListener('DOMContentLoaded', () => {
     async function renderPrepare() {
         const html = `
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>Prepare</h2>
+                <h2 class="mb-0">Prepare</h2>
                 <div class="stepper d-flex align-items-center">
                     <div class="step ${prepareState.currentStep === 'overview' ? 'active' : ''}" onclick="window.setPrepareStep('overview')">
-                        <i class="bi bi-window me-1"></i> Overview
+                        <i class="bi bi-speedometer2 me-1"></i> Overview
                     </div>
                     <div class="step-line"></div>
-                    <div class="step ${prepareState.currentStep === 'ingest' ? 'active' : ''}" onclick="window.setPrepareStep('ingest')">
-                        <i class="bi bi-arrow-repeat me-1"></i> Ingest
+                    <div class="step ${prepareState.currentStep === 'discover' ? 'active' : ''}" onclick="window.setPrepareStep('discover')">
+                        <i class="bi bi-search me-1"></i> Discover
                     </div>
                     <div class="step-line"></div>
-                    <div class="step ${prepareState.currentStep === 'map' ? 'active' : ''}" onclick="window.setPrepareStep('map')">
-                        <i class="bi bi-diagram-3 me-1"></i> Map Fields
+                    <div class="step ${prepareState.currentStep === 'stage' ? 'active' : ''}" onclick="window.setPrepareStep('stage')">
+                        <i class="bi bi-layers me-1"></i> Stage & Review
                     </div>
                     <div class="step-line"></div>
-                    <div class="step ${prepareState.currentStep === 'normalise' ? 'active' : ''}" onclick="window.setPrepareStep('normalise')">
-                        <i class="bi bi-gear me-1"></i> Normalise
+                    <div class="step ${prepareState.currentStep === 'structure' ? 'active' : ''}" onclick="window.setPrepareStep('structure')">
+                        <i class="bi bi-diagram-3 me-1"></i> Structure
                     </div>
                     <div class="step-line"></div>
-                    <div class="step ${prepareState.currentStep === 'aggregate' ? 'active' : ''}" onclick="window.setPrepareStep('aggregate')">
-                        <i class="bi bi-intersect me-1"></i> Aggregate
+                    <div class="step ${prepareState.currentStep === 'transform' ? 'active' : ''}" onclick="window.setPrepareStep('transform')">
+                        <i class="bi bi-magic me-1"></i> Transform
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step ${prepareState.currentStep === 'consolidate' ? 'active' : ''}" onclick="window.setPrepareStep('consolidate')">
+                        <i class="bi bi-combine me-1"></i> Consolidate
                     </div>
                     <div class="step-line"></div>
                     <div class="step ${prepareState.currentStep === 'publish' ? 'active' : ''}" onclick="window.setPrepareStep('publish')">
-                        <i class="bi bi-file-earmark-check me-1"></i> Publish
+                        <i class="bi bi-cloud-upload me-1"></i> Publish
                     </div>
                 </div>
             </div>
-            <div id="prepare-content"></div>
+            <div id="prepare-modern-content"></div>
         `;
         
         contentArea.innerHTML = html;
@@ -161,23 +179,442 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     async function renderPrepareStep() {
-        const stepArea = document.getElementById('prepare-content');
+        const stepArea = document.getElementById('prepare-modern-content');
         if (!stepArea) return;
 
         // Update stepper active state
         document.querySelectorAll('.stepper .step').forEach(el => {
-            el.classList.toggle('active', el.textContent.trim().toLowerCase().includes(prepareState.currentStep.toLowerCase()));
+            const text = el.textContent.trim().toLowerCase();
+            const step = prepareState.currentStep;
+            let active = false;
+            if (step === 'overview' && text.includes('overview')) active = true;
+            else if (step === 'discover' && text.includes('discover')) active = true;
+            else if (step === 'stage' && text.includes('stage')) active = true;
+            else if (step === 'structure' && text.includes('structure')) active = true;
+            else if (step === 'transform' && text.includes('transform')) active = true;
+            else if (step === 'consolidate' && text.includes('consolidate')) active = true;
+            else if (step === 'publish' && text.includes('publish')) active = true;
+            
+            el.classList.toggle('active', active);
         });
 
         switch(prepareState.currentStep) {
             case 'overview':
-                renderPrepareOverview(stepArea);
+                renderPrepareModernOverview(stepArea);
+                break;
+            case 'discover':
+                renderPrepareDiscover(stepArea);
+                break;
+            case 'stage':
+                renderPrepareStage(stepArea);
+                break;
+            case 'structure':
+                renderPrepareStructure(stepArea);
+                break;
+            case 'transform':
+                stepArea.innerHTML = '<h4>Transform</h4><p class="text-muted">Apply normalization and data cleaning rules.</p>';
+                break;
+            case 'consolidate':
+                stepArea.innerHTML = '<h4>Consolidate</h4><p class="text-muted">Merge data from multiple sources and deduplicate.</p>';
+                break;
+            case 'publish':
+                stepArea.innerHTML = '<h4>Publish</h4><p class="text-muted">Finalize and release data to the Map phase.</p>';
+                break;
+        }
+    }
+
+    function renderPrepareStage(container) {
+        container.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0">Stage & Review</h4>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-dark btn-sm">Filter</button>
+                    <button class="btn btn-primary btn-sm">Verify All Ready</button>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0 small">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Source</th>
+                                <th>Type</th>
+                                <th>Quality</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>APP-SERVER-01</strong></td>
+                                <td class="text-muted">Excel Upload</td>
+                                <td>Compute</td>
+                                <td><div class="progress" style="height: 6px; width: 60px;"><div class="progress-bar bg-success" style="width: 95%"></div></div></td>
+                                <td><span class="badge bg-success">Ready</span></td>
+                                <td><button class="btn btn-link btn-sm p-0">Review</button></td>
+                            </tr>
+                            <tr>
+                                <td><strong>DB-PROD-02</strong></td>
+                                <td class="text-muted">CMDB Sync</td>
+                                <td>Database</td>
+                                <td><div class="progress" style="height: 6px; width: 60px;"><div class="progress-bar bg-warning" style="width: 65%"></div></div></td>
+                                <td><span class="badge bg-warning text-dark">Pending</span></td>
+                                <td><button class="btn btn-link btn-sm p-0">Review</button></td>
+                            </tr>
+                            <tr>
+                                <td><strong>WEB-CLUSTER-01</strong></td>
+                                <td class="text-muted">Excel Upload</td>
+                                <td>Compute</td>
+                                <td><div class="progress" style="height: 6px; width: 60px;"><div class="progress-bar bg-danger" style="width: 35%"></div></div></td>
+                                <td><span class="badge bg-danger">Conflict</span></td>
+                                <td><button class="btn btn-link btn-sm p-0">Resolve</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    async function renderPrepareStructure(container) {
+        const [mappingsRes, entitiesRes] = await Promise.all([
+            fetch('/prepare/field-mappings'),
+            fetch('/data-dictionary/entities')
+        ]);
+        const mappings = await mappingsRes.json();
+        const entities = await entitiesRes.json();
+
+        container.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0">Structure & Map Fields</h4>
+                <div class="btn-group">
+                    <button class="btn btn-outline-dark btn-sm">Save Profile</button>
+                    <button class="btn btn-primary btn-sm">Apply Mappings</button>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-3">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">Target Entities</h6>
+                            <div class="list-group list-group-flush small">
+                                ${entities.map(e => `
+                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-0">
+                                        <span>${e}</span>
+                                        <i class="bi bi-chevron-right text-muted"></i>
+                                    </a>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-9">
+                    <div class="card shadow-sm">
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0 small">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Source Field</th>
+                                        <th>Target Entity</th>
+                                        <th>Target Field</th>
+                                        <th>Transform</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${mappings.slice(0, 10).map(m => `
+                                        <tr>
+                                            <td>${m.source_field}</td>
+                                            <td>
+                                                <select class="form-select form-select-sm" style="font-size: 0.75rem;">
+                                                    <option>${m.data_entity || 'None'}</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select class="form-select form-select-sm" style="font-size: 0.75rem;">
+                                                    <option>${m.target_field || 'None'}</option>
+                                                </select>
+                                            </td>
+                                            <td><span class="text-muted italic">None</span></td>
+                                            <td><span class="badge ${m.status === 'Resolved' ? 'bg-success' : 'bg-warning text-dark'}">${m.status}</span></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderPrepareModernOverview(container) {
+        container.innerHTML = `
+            <div class="row g-4">
+                <div class="col-md-8">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-4">Ingestion Progress</h5>
+                            <div class="row text-center">
+                                <div class="col">
+                                    <div class="h3 fw-bold mb-0">5</div>
+                                    <div class="small text-muted text-uppercase">Sources Active</div>
+                                </div>
+                                <div class="col border-start">
+                                    <div class="h3 fw-bold mb-0">2,847</div>
+                                    <div class="small text-muted text-uppercase">Total Items</div>
+                                </div>
+                                <div class="col border-start">
+                                    <div class="h3 fw-bold mb-0">412</div>
+                                    <div class="small text-muted text-uppercase">In Staging</div>
+                                </div>
+                                <div class="col border-start">
+                                    <div class="h3 fw-bold mb-0 text-success">2,435</div>
+                                    <div class="small text-muted text-uppercase">Ready</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-3">Data Source Timeline (Last 24h)</h5>
+                            <div class="timeline small">
+                                <div class="d-flex mb-3">
+                                    <div class="me-3 text-muted">09:15</div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold"><i class="bi bi-check-circle-fill text-success me-1"></i> CMDB Sync</div>
+                                        <div class="text-muted">1,245 items synced <span class="text-success">+892 new</span></div>
+                                    </div>
+                                </div>
+                                <div class="d-flex mb-3">
+                                    <div class="me-3 text-muted">08:30</div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold"><i class="bi bi-check-circle-fill text-success me-1"></i> Excel Upload</div>
+                                        <div class="text-muted">487 items uploaded <span class="text-warning">+45 duplicates</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card shadow-sm mb-4 bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-3">Overall Quality Score</h5>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="display-4 fw-bold">86%</div>
+                                <div class="flex-grow-1">
+                                    <div class="progress bg-white bg-opacity-25" style="height: 10px;">
+                                        <div class="progress-bar bg-white" style="width: 86%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr class="bg-white bg-opacity-50">
+                            <div class="small">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Completeness</span><span>78%</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Consistency</span><span>92%</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Validity</span><span>88%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-3">Next Actions</h5>
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-3 d-flex align-items-start">
+                                    <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                                    <div>
+                                        <div class="fw-bold small">Resolve 2 Conflicts</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">Source overlap in CMDB & Excel</div>
+                                    </div>
+                                </li>
+                                <li class="mb-3 d-flex align-items-start">
+                                    <i class="bi bi-diagram-3-fill text-primary me-2"></i>
+                                    <div>
+                                        <div class="fw-bold small">Map 45 Fields</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">New fields detected in Excel upload</div>
+                                    </div>
+                                </li>
+                                <li class="d-flex align-items-start">
+                                    <i class="bi bi-people-fill text-info me-2"></i>
+                                    <div>
+                                        <div class="fw-bold small">Review 12 Duplicates</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">Potential duplicate servers detected</div>
+                                    </div>
+                                </li>
+                            </ul>
+                            <button class="btn btn-dark btn-sm w-100 mt-4" onclick="window.setPrepareStep('discover')">Go to Discover</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderPrepareDiscover(container) {
+        container.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0">Discover & Ingest</h4>
+                <div class="btn-group">
+                    <button class="btn btn-primary btn-sm" onclick="window.showUploadModalOld()"><i class="bi bi-plus-lg me-1"></i> Add Source</button>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">Ingestion Methods</h6>
+                            <div class="list-group list-group-flush">
+                                <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-0">
+                                    <span><i class="bi bi-file-earmark-excel me-2 text-success"></i> File Upload</span>
+                                    <span class="badge bg-light text-dark rounded-pill">3 active</span>
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-0">
+                                    <span><i class="bi bi-database-fill me-2 text-primary"></i> CMDB Connect</span>
+                                    <span class="badge bg-light text-dark rounded-pill">1 active</span>
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-0">
+                                    <span><i class="bi bi-broadcast me-2 text-info"></i> Network Scan</span>
+                                    <span class="badge bg-secondary text-white rounded-pill">Future</span>
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-0">
+                                    <span><i class="bi bi-pencil-square me-2 text-warning"></i> Manual Entry</span>
+                                    <span class="badge bg-light text-dark rounded-pill">42 items</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white py-3">
+                            <h6 class="fw-bold mb-0">Active Data Sources</h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0 small">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Source Name</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Items</th>
+                                        <th>Last Sync</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Server_Inventory_v2</strong></td>
+                                        <td>Excel</td>
+                                        <td><span class="badge bg-success">Success</span></td>
+                                        <td>1,245</td>
+                                        <td>10 mins ago</td>
+                                        <td><button class="btn btn-link btn-sm p-0"><i class="bi bi-three-dots"></i></button></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>ServiceNow_PROD</strong></td>
+                                        <td>CMDB</td>
+                                        <td><span class="badge bg-primary text-white"><i class="bi bi-arrow-repeat me-1"></i> Syncing</span></td>
+                                        <td>892</td>
+                                        <td>Just now</td>
+                                        <td><button class="btn btn-link btn-sm p-0"><i class="bi bi-three-dots"></i></button></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>App_List_Final</strong></td>
+                                        <td>CSV</td>
+                                        <td><span class="badge bg-success">Success</span></td>
+                                        <td>412</td>
+                                        <td>2 hours ago</td>
+                                        <td><button class="btn btn-link btn-sm p-0"><i class="bi bi-three-dots"></i></button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // --- Module: Prepare_OLD ---
+    let prepareOldState = {
+        currentStep: 'overview'
+    };
+
+    async function renderPrepareOld() {
+        const html = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Prepare_OLD</h2>
+                <div class="stepper d-flex align-items-center">
+                    <div class="step ${prepareOldState.currentStep === 'overview' ? 'active' : ''}" onclick="window.setPrepareOldStep('overview')">
+                        <i class="bi bi-window me-1"></i> Overview
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step ${prepareOldState.currentStep === 'ingest' ? 'active' : ''}" onclick="window.setPrepareOldStep('ingest')">
+                        <i class="bi bi-arrow-repeat me-1"></i> Ingest
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step ${prepareOldState.currentStep === 'map' ? 'active' : ''}" onclick="window.setPrepareOldStep('map')">
+                        <i class="bi bi-diagram-3 me-1"></i> Map Fields
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step ${prepareOldState.currentStep === 'normalise' ? 'active' : ''}" onclick="window.setPrepareOldStep('normalise')">
+                        <i class="bi bi-gear me-1"></i> Normalise
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step ${prepareOldState.currentStep === 'aggregate' ? 'active' : ''}" onclick="window.setPrepareOldStep('aggregate')">
+                        <i class="bi bi-intersect me-1"></i> Aggregate
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step ${prepareOldState.currentStep === 'publish' ? 'active' : ''}" onclick="window.setPrepareOldStep('publish')">
+                        <i class="bi bi-file-earmark-check me-1"></i> Publish
+                    </div>
+                </div>
+            </div>
+            <div id="prepare-old-content"></div>
+        `;
+        
+        contentArea.innerHTML = html;
+        renderPrepareOldStep();
+    }
+
+    window.setPrepareOldStep = (step) => {
+        prepareOldState.currentStep = step;
+        renderPrepareOldStep();
+    };
+
+    async function renderPrepareOldStep() {
+        const stepArea = document.getElementById('prepare-old-content');
+        if (!stepArea) return;
+
+        // Update stepper active state
+        document.querySelectorAll('.stepper .step').forEach(el => {
+            el.classList.toggle('active', el.textContent.trim().toLowerCase().includes(prepareOldState.currentStep.toLowerCase()));
+        });
+
+        switch(prepareOldState.currentStep) {
+            case 'overview':
+                renderPrepareOldOverview(stepArea);
                 break;
             case 'ingest':
-                await renderPrepareIngest(stepArea);
+                await renderPrepareOldIngest(stepArea);
                 break;
             case 'map':
-                await renderPrepareMap(stepArea);
+                await renderPrepareOldMap(stepArea);
                 break;
             case 'normalise':
                 stepArea.innerHTML = '<h4>Normalise</h4><p>Coming soon...</p>';
@@ -191,7 +628,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderPrepareOverview(container) {
+    function renderPrepareOldOverview(container) {
         container.innerHTML = `
             <div class="row g-4">
                 <div class="col-md-4">
@@ -205,7 +642,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="d-flex gap-2">
                                 <button class="btn btn-outline-dark btn-sm"><i class="bi bi-download me-1"></i> Template</button>
                                 <button class="btn btn-dark btn-sm" onclick="window.showUploadModal()"><i class="bi bi-paperclip me-1"></i> Upload File</button>
-                                <button class="btn btn-outline-primary btn-sm" onclick="window.setPrepareStep('ingest')">View Data</button>
+                                <button class="btn btn-outline-primary btn-sm" onclick="window.setPrepareOldStep('ingest')">View Data</button>
                             </div>
                             <div class="mt-3">
                                 <button class="btn btn-primary btn-sm w-100" onclick="window.showManualInputModal()">Manual Input</button>
@@ -221,7 +658,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <h5 class="card-title mb-0">Map Fields</h5>
                             </div>
                             <p class="card-text text-muted small">Map your source fields to target schema fields. Required fields must be mapped.</p>
-                            <button class="btn btn-dark btn-sm w-100" onclick="window.setPrepareStep('map')">Map Fields</button>
+                            <button class="btn btn-dark btn-sm w-100" onclick="window.setPrepareOldStep('map')">Map Fields</button>
                         </div>
                     </div>
                 </div>
@@ -233,7 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <h5 class="card-title mb-0">Normalise</h5>
                             </div>
                             <p class="card-text text-muted small">Map uploaded values to standard values in the data dictionary to ensure data consistency.</p>
-                            <button class="btn btn-dark btn-sm w-100" onclick="window.setPrepareStep('normalise')">Normalise Data</button>
+                            <button class="btn btn-dark btn-sm w-100" onclick="window.setPrepareOldStep('normalise')">Normalise Data</button>
                         </div>
                     </div>
                 </div>
@@ -245,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <h5 class="card-title mb-0">Aggregate</h5>
                             </div>
                             <p class="card-text text-muted small">Review and resolve data conflicts before publishing.</p>
-                            <button class="btn btn-dark btn-sm w-100" onclick="window.setPrepareStep('aggregate')">Aggregate Data</button>
+                            <button class="btn btn-dark btn-sm w-100" onclick="window.setPrepareOldStep('aggregate')">Aggregate Data</button>
                         </div>
                     </div>
                 </div>
@@ -257,7 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <h5 class="card-title mb-0">Publish</h5>
                             </div>
                             <p class="card-text text-muted small">Review and publish changes.</p>
-                            <button class="btn btn-dark btn-sm w-100" onclick="window.setPrepareStep('publish')">Publish</button>
+                            <button class="btn btn-dark btn-sm w-100" onclick="window.setPrepareOldStep('publish')">Publish</button>
                         </div>
                     </div>
                 </div>
@@ -265,7 +702,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    async function renderPrepareIngest(container) {
+    async function renderPrepareOldIngest(container) {
         const response = await fetch('/prepare/datasets');
         const datasets = await response.json();
         
@@ -278,7 +715,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="d-flex gap-2">
                     <button class="btn btn-outline-dark btn-sm" onclick="window.showUploadModal()">Upload Files</button>
                     <button class="btn btn-outline-dark btn-sm">Download Template</button>
-                    <button class="btn btn-primary btn-sm" onclick="window.setPrepareStep('map')">Map Fields</button>
+                    <button class="btn btn-primary btn-sm" onclick="window.setPrepareOldStep('map')">Map Fields</button>
                 </div>
             </div>
             
@@ -315,7 +752,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    async function renderPrepareMap(container) {
+    async function renderPrepareOldMap(container) {
         const [mappingsRes, entitiesRes, datasetsRes] = await Promise.all([
             fetch('/prepare/field-mappings'),
             fetch('/data-dictionary/entities'),
@@ -326,9 +763,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const datasets = await datasetsRes.json();
         
         // Filter logic
-        const searchTerm = (prepareState.mapSearch || '').toLowerCase();
-        const filterSource = prepareState.mapFilterSource || 'Data Source';
-        const filterStatus = prepareState.mapFilterStatus || 'Status';
+        const searchTerm = (prepareOldState.mapSearch || '').toLowerCase();
+        const filterSource = prepareOldState.mapFilterSource || 'Data Source';
+        const filterStatus = prepareOldState.mapFilterStatus || 'Status';
 
         const filteredMappings = mappings.filter(m => {
             const matchesSearch = !searchTerm || m.source_field.toLowerCase().includes(searchTerm);
@@ -358,7 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                     <span class="fw-bold">${percent}%</span>
-                    <button class="btn btn-primary btn-sm" onclick="window.setPrepareStep('normalise')">Normalise</button>
+                    <button class="btn btn-primary btn-sm" onclick="window.setPrepareOldStep('normalise')">Normalise</button>
                 </div>
             </div>
 
@@ -366,11 +803,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="col-md-3">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control border-start-0" placeholder="Search" value="${prepareState.mapSearch || ''}" oninput="window.setMapFilter('mapSearch', this.value)">
+                        <input type="text" class="form-control border-start-0" placeholder="Search" value="${prepareOldState.mapSearch || ''}" oninput="window.setMapOldFilter('mapSearch', this.value)">
                     </div>
                 </div>
                 <div class="col-md-2">
-                    <select class="form-select form-select-sm" onchange="window.setMapFilter('mapFilterSource', this.value)">
+                    <select class="form-select form-select-sm" onchange="window.setMapOldFilter('mapFilterSource', this.value)">
                         <option>Data Source</option>
                         ${[...new Set(mappings.map(m => m.data_source))].map(ds => `<option ${filterSource === ds ? 'selected' : ''}>${ds}</option>`).join('')}
                     </select>
@@ -381,7 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <select class="form-select form-select-sm" onchange="window.setMapFilter('mapFilterStatus', this.value)">
+                    <select class="form-select form-select-sm" onchange="window.setMapOldFilter('mapFilterStatus', this.value)">
                         <option>Status</option>
                         <option ${filterStatus === 'Pending' ? 'selected' : ''}>Pending</option>
                         <option ${filterStatus === 'Resolved' ? 'selected' : ''}>Resolved</option>
@@ -410,13 +847,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <td class="text-muted">${m.data_source}</td>
                                     <td class="text-muted">${m.worksheet}</td>
                                     <td>
-                                        <select class="form-select form-select-sm" onchange="window.updateMapping('${m.id}', 'data_entity', this.value)">
+                                        <select class="form-select form-select-sm" onchange="window.updateMappingOld('${m.id}', 'data_entity', this.value)">
                                             <option value="">Choose Data Entity</option>
                                             ${entities.map(e => `<option value="${e}" ${m.data_entity === e ? 'selected' : ''}>${e}</option>`).join('')}
                                         </select>
                                     </td>
                                     <td>
-                                        <select class="form-select form-select-sm" id="target-field-${m.id}" onchange="window.updateMapping('${m.id}', 'target_field', this.value)">
+                                        <select class="form-select form-select-sm" id="target-field-${m.id}" onchange="window.updateMappingOld('${m.id}', 'target_field', this.value)">
                                             <option value="">Choose field</option>
                                             ${m.target_field ? `<option value="${m.target_field}" selected>${m.target_field}</option>` : ''}
                                         </select>
@@ -428,7 +865,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </td>
                                     <td>
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" ${m.process ? 'checked' : ''} onchange="window.updateMapping('${m.id}', 'process', this.checked)">
+                                            <input class="form-check-input" type="checkbox" ${m.process ? 'checked' : ''} onchange="window.updateMappingOld('${m.id}', 'process', this.checked)">
                                         </div>
                                     </td>
                                 </tr>
@@ -443,21 +880,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add event listeners for entity selection to load fields
         for (const m of filteredMappings) {
             if (m.data_entity) {
-                await window.updateTargetFieldsDropdown(m.id, m.data_entity, m.target_field);
+                await window.updateTargetFieldsDropdownOld(m.id, m.data_entity, m.target_field);
             }
         }
     }
 
-    window.setMapFilter = (key, value) => {
-        prepareState[key] = value;
-        renderPrepareStep();
+    window.setMapOldFilter = (key, value) => {
+        prepareOldState[key] = value;
+        renderPrepareOldStep();
     };
 
-    window.updateMapping = async (id, field, value) => {
+    window.updateMappingOld = async (id, field, value) => {
         const updates = { [field]: value };
         if (field === 'data_entity') {
             updates.target_field = null;
-            await window.updateTargetFieldsDropdown(id, value);
+            await window.updateTargetFieldsDropdownOld(id, value);
         }
         
         // Auto-resolve if both entity and field are selected
@@ -473,10 +910,10 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify(updates)
         });
         
-        renderPrepareStep();
+        renderPrepareOldStep();
     };
 
-    window.updateTargetFieldsDropdown = async (mappingId, entity, selectedField = null) => {
+    window.updateTargetFieldsDropdownOld = async (mappingId, entity, selectedField = null) => {
         const select = document.getElementById(`target-field-${mappingId}`);
         if (!select) return;
 
@@ -492,7 +929,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fields.map(f => `<option value="${f.name}" ${selectedField === f.name ? 'selected' : ''}>${f.name}</option>`).join('');
     };
 
-    window.showUploadModal = () => {
+    window.showUploadModalOld = () => {
         const modalHtml = `
             <div class="modal fade" id="uploadModal" tabindex="-1">
                 <div class="modal-dialog modal-lg">
@@ -2045,5 +2482,253 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         };
+    };
+
+    // --- Module: Raw Data ---
+    window.renderRawDataEntities = async function(searchFilter = '', sortCol = 'created_time', sortDir = 'desc', currentPage = 1) {
+        const response = await fetch('/raw-data');
+        let entities = await response.json();
+
+        if (searchFilter) {
+            const s = searchFilter.toLowerCase();
+            entities = entities.filter(e => 
+                e.data_entity_name.toLowerCase().includes(s) || 
+                e.user.toLowerCase().includes(s) ||
+                e.source_type.toLowerCase().includes(s)
+            );
+        }
+
+        // Sorting logic
+        entities.sort((a, b) => {
+            let valA = (a[sortCol] || '').toString().toLowerCase();
+            let valB = (b[sortCol] || '').toString().toLowerCase();
+            if (sortCol === 'fields_count') {
+                valA = a.fields.length;
+                valB = b.fields.length;
+            }
+            if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+            if (valA > valB) return sortDir === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        // Pagination
+        const itemsPerPage = 10;
+        const totalItems = entities.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        const start = (currentPage - 1) * itemsPerPage;
+        const paginatedEntities = entities.slice(start, start + itemsPerPage);
+
+        let html = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold">Raw Data Entities</h3>
+            </div>
+
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                        <input type="text" id="raw-entity-search" class="form-control border-start-0" placeholder="Search Raw Data..." value="${searchFilter}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4" style="cursor:pointer" onclick="window.renderRawDataEntities('${searchFilter}', 'data_entity_name', '${sortCol === 'data_entity_name' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                                    Entity Name ${sortCol === 'data_entity_name' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                                </th>
+                                <th style="cursor:pointer" onclick="window.renderRawDataEntities('${searchFilter}', 'source_type', '${sortCol === 'source_type' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                                    Source ${sortCol === 'source_type' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                                </th>
+                                <th style="cursor:pointer" onclick="window.renderRawDataEntities('${searchFilter}', 'user', '${sortCol === 'user' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                                    User ${sortCol === 'user' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                                </th>
+                                <th style="cursor:pointer" onclick="window.renderRawDataEntities('${searchFilter}', 'created_time', '${sortCol === 'created_time' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                                    Created Time ${sortCol === 'created_time' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                                </th>
+                                <th style="cursor:pointer" onclick="window.renderRawDataEntities('${searchFilter}', 'fields_count', '${sortCol === 'fields_count' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                                    Fields Count ${sortCol === 'fields_count' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                                </th>
+                                <th width="100" class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${paginatedEntities.map(entity => `
+                                <tr>
+                                    <td class="ps-4 fw-bold text-primary" style="cursor: pointer" onclick="window.renderRawDataEntityFields('${entity.id}')">${entity.data_entity_name}</td>
+                                    <td><span class="badge ${entity.source_type === 'manual' ? 'bg-info' : 'bg-success'}">${entity.source_type}</span></td>
+                                    <td>${entity.user}</td>
+                                    <td><small class="text-muted">${entity.created_time}</small></td>
+                                    <td><span class="badge bg-light text-dark border">${entity.fields.length}</span></td>
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-sm btn-outline-danger" onclick="window.deleteRawDataEntity('${entity.id}')"><i class="bi bi-trash"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                            ${entities.length === 0 ? '<tr><td colspan="6" class="text-center py-5 text-muted">No raw data entities found.</td></tr>' : ''}
+                        </tbody>
+                    </table>
+                </div>
+                ${totalItems > itemsPerPage ? `
+                <div class="card-footer bg-white border-top-0 py-3">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0 justify-content-center">
+                            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                                <a class="page-link" href="#" onclick="window.renderRawDataEntities('${searchFilter}', '${sortCol}', '${sortDir}', ${currentPage - 1}); return false;">Previous</a>
+                            </li>
+                            ${Array.from({length: totalPages}, (_, i) => i + 1).map(p => `
+                                <li class="page-item ${p === currentPage ? 'active' : ''}">
+                                    <a class="page-link" href="#" onclick="window.renderRawDataEntities('${searchFilter}', '${sortCol}', '${sortDir}', ${p}); return false;">${p}</a>
+                                </li>
+                            `).join('')}
+                            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                                <a class="page-link" href="#" onclick="window.renderRawDataEntities('${searchFilter}', '${sortCol}', '${sortDir}', ${currentPage + 1}); return false;">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                ` : ''}
+            </div>
+        `;
+
+        contentArea.innerHTML = html;
+
+        const searchInput = document.getElementById('raw-entity-search');
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.setSelectionRange(searchFilter.length, searchFilter.length);
+            searchInput.addEventListener('input', debounce((e) => {
+                window.renderRawDataEntities(e.target.value, sortCol, sortDir);
+            }, 500));
+        }
+
+        window.deleteRawDataEntity = async (id) => {
+            if (confirm('Are you sure you want to delete this raw data entity?')) {
+                const response = await fetch(`/raw-data/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    window.renderRawDataEntities(searchFilter, sortCol, sortDir, currentPage);
+                }
+            }
+        };
+    };
+
+    window.renderRawDataEntityFields = async function(entityId, searchFilter = '', sortCol = 'field_name', sortDir = 'asc', currentPage = 1) {
+        const response = await fetch(`/raw-data/${entityId}`);
+        const entity = await response.json();
+        let fields = entity.fields;
+
+        if (searchFilter) {
+            const s = searchFilter.toLowerCase();
+            fields = fields.filter(f => 
+                f.field_name.toLowerCase().includes(s) || 
+                f.field_value.toLowerCase().includes(s)
+            );
+        }
+
+        // Sorting logic
+        fields.sort((a, b) => {
+            let valA = (a[sortCol] || '').toString().toLowerCase();
+            let valB = (b[sortCol] || '').toString().toLowerCase();
+            if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+            if (valA > valB) return sortDir === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        // Pagination
+        const itemsPerPage = 15;
+        const totalItems = fields.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        const start = (currentPage - 1) * itemsPerPage;
+        const paginatedFields = fields.slice(start, start + itemsPerPage);
+
+        let html = `
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item"><a href="#" onclick="window.renderRawDataEntities()">Raw Data</a></li>
+                        <li class="breadcrumb-item active">${entity.data_entity_name}</li>
+                    </ol>
+                </nav>
+                <h3 class="fw-bold">Raw Data Fields</h3>
+            </div>
+
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                        <input type="text" id="raw-field-search" class="form-control border-start-0" placeholder="Search Fields..." value="${searchFilter}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4" style="cursor:pointer" onclick="window.renderRawDataEntityFields('${entityId}', '${searchFilter}', 'field_name', '${sortCol === 'field_name' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                                    Field Name ${sortCol === 'field_name' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                                </th>
+                                <th style="cursor:pointer" onclick="window.renderRawDataEntityFields('${entityId}', '${searchFilter}', 'field_value', '${sortCol === 'field_value' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                                    Field Value ${sortCol === 'field_value' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                                </th>
+                                <th style="cursor:pointer" onclick="window.renderRawDataEntityFields('${entityId}', '${searchFilter}', 'rating', '${sortCol === 'rating' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                                    Rating ${sortCol === 'rating' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                                </th>
+                                <th style="cursor:pointer" onclick="window.renderRawDataEntityFields('${entityId}', '${searchFilter}', 'created_time', '${sortCol === 'created_time' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                                    Created Time ${sortCol === 'created_time' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${paginatedFields.map(field => `
+                                <tr>
+                                    <td class="ps-4 fw-bold">${field.field_name}</td>
+                                    <td>${field.field_value}</td>
+                                    <td><span class="badge bg-light text-dark border">${field.rating || 'N/A'}</span></td>
+                                    <td><small class="text-muted">${field.created_time}</small></td>
+                                </tr>
+                            `).join('')}
+                            ${fields.length === 0 ? '<tr><td colspan="4" class="text-center py-5 text-muted">No fields found.</td></tr>' : ''}
+                        </tbody>
+                    </table>
+                </div>
+                ${totalItems > itemsPerPage ? `
+                <div class="card-footer bg-white border-top-0 py-3">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0 justify-content-center">
+                            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                                <a class="page-link" href="#" onclick="window.renderRawDataEntityFields('${entityId}', '${searchFilter}', '${sortCol}', '${sortDir}', ${currentPage - 1}); return false;">Previous</a>
+                            </li>
+                            ${Array.from({length: totalPages}, (_, i) => i + 1).map(p => `
+                                <li class="page-item ${p === currentPage ? 'active' : ''}">
+                                    <a class="page-link" href="#" onclick="window.renderRawDataEntityFields('${entityId}', '${searchFilter}', '${sortCol}', '${sortDir}', ${p}); return false;">${p}</a>
+                                </li>
+                            `).join('')}
+                            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                                <a class="page-link" href="#" onclick="window.renderRawDataEntityFields('${entityId}', '${searchFilter}', '${sortCol}', '${sortDir}', ${currentPage + 1}); return false;">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                ` : ''}
+            </div>
+        `;
+
+        contentArea.innerHTML = html;
+
+        const searchInput = document.getElementById('raw-field-search');
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.setSelectionRange(searchFilter.length, searchFilter.length);
+            searchInput.addEventListener('input', debounce((e) => {
+                window.renderRawDataEntityFields(entityId, e.target.value, sortCol, sortDir);
+            }, 500));
+        }
     };
 });

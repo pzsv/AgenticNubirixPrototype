@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from app.api import prepare, map as mapping, plan, move, evaluate, data_dictionary, data_entities
+from app.api import prepare, map as mapping, plan, move, evaluate, data_dictionary, data_entities, raw_data
 import os
 
 app = FastAPI(
@@ -18,6 +18,7 @@ app.include_router(move.router)
 app.include_router(evaluate.router)
 app.include_router(data_dictionary.router)
 app.include_router(data_entities.router)
+app.include_router(raw_data.router)
 
 # Mount Static Files
 base_dir = os.path.dirname(os.path.abspath(__file__))

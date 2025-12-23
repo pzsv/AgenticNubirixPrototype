@@ -11,6 +11,40 @@ router = APIRouter(prefix="/prepare", tags=["Prepare"])
 @router.post("/items", response_model=ConfigurationItem)
 async def create_ci(ci: ConfigurationItemCreate):
     ci_id = storage.add_ci(ci.model_dump())
+    
+    # Create Raw Data record for manual ingestion
+    raw_entity_id = storage.add_raw_data_entity({
+        "source_type": "manual",
+        "user": "admin", # Default user for now
+        "data_entity_name": ci.type.value if hasattr(ci.type, 'value') else str(ci.type)
+    })
+    
+    # Add name as a field
+    storage.add_raw_data_entity_field({
+        "raw_data_entity_id": raw_entity_id,
+        "field_name": "name",
+        "field_value": ci.name,
+        "rating": "manual"
+    })
+    
+    # Add description as a field
+    if ci.description:
+        storage.add_raw_data_entity_field({
+            "raw_data_entity_id": raw_entity_id,
+            "field_name": "description",
+            "field_value": ci.description,
+            "rating": "manual"
+        })
+        
+    # Add properties as fields
+    for key, value in ci.properties.items():
+        storage.add_raw_data_entity_field({
+            "raw_data_entity_id": raw_entity_id,
+            "field_name": key,
+            "field_value": str(value),
+            "rating": "manual"
+        })
+        
     return storage.get_ci_by_id(ci_id)
 
 @router.get("/items", response_model=list[ConfigurationItem])
@@ -71,6 +105,22 @@ async def upload_dataset(
                 "process": True
             })
 
+        # Create Raw Data Records for each row in the uploaded file
+        # Limit to first 100 rows to avoid excessive data in prototype
+        for _, row in df.head(100).iterrows():
+            raw_entity_id = storage.add_raw_data_entity({
+                "source_type": "file",
+                "user": "admin",
+                "data_entity_name": worksheet
+            })
+            for col in df.columns:
+                storage.add_raw_data_entity_field({
+                    "raw_data_entity_id": raw_entity_id,
+                    "field_name": str(col),
+                    "field_value": str(row[col]),
+                    "rating": rating
+                })
+
         return {"message": f"Successfully uploaded {name} with {len(df)} records", "dataset_id": ds_id}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -96,6 +146,21 @@ async def ingest_cis(file: UploadFile = File(...)):
                 "properties": json.loads(row.get("properties", "{}")) if isinstance(row.get("properties"), str) else {}
             }
             storage.add_ci(ci_data)
+            
+            # Create Raw Data record
+            raw_entity_id = storage.add_raw_data_entity({
+                "source_type": "file",
+                "user": "admin",
+                "data_entity_name": str(ci_data["type"])
+            })
+            for col in df.columns:
+                storage.add_raw_data_entity_field({
+                    "raw_data_entity_id": raw_entity_id,
+                    "field_name": str(col),
+                    "field_value": str(row[col]),
+                    "rating": "high"
+                })
+                
             ingested_count += 1
         except Exception:
             continue

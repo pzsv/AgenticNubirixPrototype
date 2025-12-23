@@ -14,6 +14,78 @@ class DatabaseStorage:
             self._seed_data_dictionary()
         if self.db.query(models.Dataset).count() == 0:
             self._seed_datasets()
+        if self.db.query(models.RawDataEntity).count() == 0:
+            self._seed_raw_data()
+
+    def _seed_raw_data(self):
+        # Sample raw data for manual ingestion
+        entities = [
+            {
+                "source_type": "manual",
+                "user": "admin",
+                "data_entity_name": "server",
+                "fields": {
+                    "name": "PROD-WEB-01",
+                    "OS": "Ubuntu 22.04",
+                    "CPU": "4",
+                    "RAM": "16GB"
+                }
+            },
+            {
+                "source_type": "manual",
+                "user": "peti",
+                "data_entity_name": "database",
+                "fields": {
+                    "name": "CUST-DB-01",
+                    "Technology": "PostgreSQL",
+                    "Version": "15.4"
+                }
+            }
+        ]
+
+        # Sample raw data for file ingestion
+        file_entities = [
+            {
+                "source_type": "file",
+                "user": "admin",
+                "data_entity_name": "Server List",
+                "rating": "high",
+                "rows": [
+                    {"Server Name": "SRV-APPS-01", "Environment": "PROD", "IP Address": "10.0.1.10"},
+                    {"Server Name": "SRV-APPS-02", "Environment": "PROD", "IP Address": "10.0.1.11"},
+                    {"Server Name": "SRV-APPS-03", "Environment": "DEV", "IP Address": "10.0.2.10"}
+                ]
+            }
+        ]
+
+        for e in entities:
+            eid = self.add_raw_data_entity({
+                "source_type": e["source_type"],
+                "user": e["user"],
+                "data_entity_name": e["data_entity_name"]
+            })
+            for k, v in e["fields"].items():
+                self.add_raw_data_entity_field({
+                    "raw_data_entity_id": eid,
+                    "field_name": k,
+                    "field_value": v,
+                    "rating": "manual"
+                })
+
+        for fe in file_entities:
+            for row in fe["rows"]:
+                eid = self.add_raw_data_entity({
+                    "source_type": fe["source_type"],
+                    "user": fe["user"],
+                    "data_entity_name": fe["data_entity_name"]
+                })
+                for k, v in row.items():
+                    self.add_raw_data_entity_field({
+                        "raw_data_entity_id": eid,
+                        "field_name": k,
+                        "field_value": v,
+                        "rating": fe["rating"]
+                    })
 
     def _seed_datasets(self):
         # Sample datasets based on screenshots
@@ -69,7 +141,9 @@ class DatabaseStorage:
             "Physical Server": ["Hardware Model", "Serial Number"],
             "Application": ["Application Category", "Criticality"],
             "Web": ["Web Server Type", "VHost Name"],
-            "Network Device": ["Device Type", "Firmware Version"]
+            "Network Device": ["Device Type", "Firmware Version"],
+            "Storage": ["Storage Type", "Capacity", "IOPS"],
+            "Environment": ["Environment Name", "Location", "Tier"]
         }
         
         for entity, fields in entities.items():
@@ -572,5 +646,101 @@ class DatabaseStorage:
         self.db.delete(db_field)
         self.db.commit()
         return True
+
+    def add_raw_data_entity(self, entity_data: Dict[str, Any]) -> str:
+        entity_id = entity_data.get("id") or str(uuid.uuid4())
+        created_time = entity_data.get("created_time") or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        db_entity = models.RawDataEntity(
+            id=entity_id,
+            created_time=created_time,
+            source_type=entity_data["source_type"],
+            user=entity_data["user"],
+            data_entity_name=entity_data["data_entity_name"]
+        )
+        self.db.add(db_entity)
+        self.db.commit()
+        return entity_id
+
+    def get_raw_data_entities(self) -> List[Dict[str, Any]]:
+        entities = self.db.query(models.RawDataEntity).all()
+        return [
+            {
+                "id": e.id,
+                "created_time": e.created_time,
+                "source_type": e.source_type,
+                "user": e.user,
+                "data_entity_name": e.data_entity_name,
+                "fields": [
+                    {
+                        "id": f.id, 
+                        "created_time": f.created_time,
+                        "raw_data_entity_id": f.raw_data_entity_id,
+                        "field_name": f.field_name,
+                        "field_value": f.field_value,
+                        "rating": f.rating
+                    }
+                    for f in e.fields
+                ]
+            } for e in entities
+        ]
+
+    def get_raw_data_entity_by_id(self, entity_id: str) -> Optional[Dict[str, Any]]:
+        e = self.db.query(models.RawDataEntity).filter(models.RawDataEntity.id == entity_id).first()
+        if e:
+            return {
+                "id": e.id,
+                "created_time": e.created_time,
+                "source_type": e.source_type,
+                "user": e.user,
+                "data_entity_name": e.data_entity_name,
+                "fields": [
+                    {
+                        "id": f.id, 
+                        "created_time": f.created_time,
+                        "raw_data_entity_id": f.raw_data_entity_id,
+                        "field_name": f.field_name,
+                        "field_value": f.field_value,
+                        "rating": f.rating
+                    }
+                    for f in e.fields
+                ]
+            }
+        return None
+
+    def delete_raw_data_entity(self, entity_id: str) -> bool:
+        db_entity = self.db.query(models.RawDataEntity).filter(models.RawDataEntity.id == entity_id).first()
+        if not db_entity:
+            return False
+        self.db.delete(db_entity)
+        self.db.commit()
+        return True
+
+    def add_raw_data_entity_field(self, field_data: Dict[str, Any]) -> str:
+        field_id = field_data.get("id") or str(uuid.uuid4())
+        created_time = field_data.get("created_time") or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        db_field = models.RawDataEntityField(
+            id=field_id,
+            created_time=created_time,
+            raw_data_entity_id=field_data["raw_data_entity_id"],
+            field_name=field_data["field_name"],
+            field_value=str(field_data.get("field_value", "")),
+            rating=field_data.get("rating")
+        )
+        self.db.add(db_field)
+        self.db.commit()
+        return field_id
+
+    def get_raw_data_entity_fields(self, entity_id: str) -> List[Dict[str, Any]]:
+        fields = self.db.query(models.RawDataEntityField).filter(models.RawDataEntityField.raw_data_entity_id == entity_id).all()
+        return [
+            {
+                "id": f.id,
+                "created_time": f.created_time,
+                "raw_data_entity_id": f.raw_data_entity_id,
+                "field_name": f.field_name,
+                "field_value": f.field_value,
+                "rating": f.rating
+            } for f in fields
+        ]
 
 storage = DatabaseStorage()

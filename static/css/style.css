@@ -86,6 +86,7 @@ body {
     color: #495057;
 }
 
+.phase-card.prepare-old .phase-icon { background-color: #a8a8a8; color: #fff; }
 .phase-card.prepare .phase-icon { background-color: #d1b181; color: #fff; }
 .phase-card.map .phase-icon { background-color: #4e807d; color: #fff; }
 .phase-card.plan .phase-icon { background-color: #e5a03d; color: #fff; }
