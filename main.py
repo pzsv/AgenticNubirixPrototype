@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from app.api import prepare, map as mapping, plan, move, evaluate
+from app.api import prepare, map as mapping, plan, move, evaluate, data_dictionary
 import os
 
 app = FastAPI(
@@ -16,6 +16,7 @@ app.include_router(mapping.router)
 app.include_router(plan.router)
 app.include_router(move.router)
 app.include_router(evaluate.router)
+app.include_router(data_dictionary.router)
 
 # Mount Static Files
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -28,7 +29,7 @@ async def root():
 @app.get("/api-status")
 async def api_status():
     return {
-        "message": "Welccome to the Data Centre Migration Prototype API",
+        "message": "Welcome to the Data Centre Migration Prototype API",
         "modules": [
             "Prepare: Ingest and manage CIs",
             "Map: Group CIs into workloads and define dependencies",

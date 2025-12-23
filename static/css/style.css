@@ -112,3 +112,40 @@ body {
     font-size: 1.5rem;
     letter-spacing: 1px;
 }
+
+/* Stepper */
+.stepper {
+    background: #fff;
+    padding: 10px 20px;
+    border-radius: 30px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.step {
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #6c757d;
+    padding: 5px 15px;
+    border-radius: 20px;
+}
+
+.step.active {
+    background-color: #e9ecef;
+    color: #000;
+    font-weight: bold;
+}
+
+.step-line {
+    width: 40px;
+    height: 1px;
+    background-color: #dee2e6;
+    margin: 0 5px;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.border-dashed {
+    border-style: dashed !important;
+}
