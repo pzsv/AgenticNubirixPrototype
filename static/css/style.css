@@ -1,0 +1,114 @@
+:root {
+    --sidebar-width: 250px;
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --bg-light: #f8f9fa;
+}
+
+body {
+    background-color: var(--bg-light);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+}
+
+#sidebar {
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+    background: #fff;
+    color: #333;
+    transition: all 0.3s;
+    border-right: 1px solid #dee2e6;
+    min-height: 100vh;
+}
+
+#sidebar .sidebar-header {
+    padding: 20px;
+}
+
+#sidebar ul.components {
+    padding: 20px 0;
+}
+
+#sidebar ul li a {
+    padding: 10px 20px;
+    font-size: 0.9em;
+    display: block;
+    color: #333;
+    text-decoration: none;
+}
+
+#sidebar ul li a:hover {
+    background: #f1f1f1;
+}
+
+#sidebar ul li.active > a {
+    color: var(--primary-color);
+    background: #e9ecef;
+    border-left: 4px solid var(--primary-color);
+}
+
+#content {
+    width: 100%;
+    min-height: 100vh;
+    transition: all 0.3s;
+}
+
+.phase-card {
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 2rem 1rem;
+    text-align: center;
+    background: #fff;
+    height: 100%;
+    transition: transform 0.2s;
+}
+
+.phase-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+.phase-icon {
+    width: 50px;
+    height: 50px;
+    background-color: #e9ecef;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 1.5rem;
+    color: #495057;
+}
+
+.phase-card.prepare .phase-icon { background-color: #d1b181; color: #fff; }
+.phase-card.map .phase-icon { background-color: #4e807d; color: #fff; }
+.phase-card.plan .phase-icon { background-color: #e5a03d; color: #fff; }
+.phase-card.move .phase-icon { background-color: #4a86e8; color: #fff; }
+.phase-card.evaluate .phase-icon { background-color: #666666; color: #fff; }
+
+.btn-start-phase {
+    background-color: #000033;
+    color: #fff;
+    border-radius: 5px;
+    padding: 0.5rem 1.5rem;
+    text-decoration: none;
+    font-size: 0.9rem;
+    display: inline-block;
+    margin-top: 1rem;
+}
+
+.btn-start-phase:hover {
+    color: #fff;
+    opacity: 0.9;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+}

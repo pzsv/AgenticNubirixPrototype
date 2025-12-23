@@ -1,0 +1,29 @@
+# Test your FastAPI endpoints
+
+GET http://127.0.0.1:8000/
+Accept: text/html
+
+###
+# API Status (JSON)
+GET http://127.0.0.1:8000/api-status
+Accept: application/json
+
+###
+# Prepare: Get all CIs
+GET http://127.0.0.1:8000/prepare/items
+Accept: application/json
+
+###
+# Map: Get all workloads
+GET http://127.0.0.1:8000/map/workloads
+Accept: application/json
+
+###
+# Plan: Get migration waves
+GET http://127.0.0.1:8000/plan/waves
+Accept: application/json
+
+###
+# Evaluate: Get Dashboard
+GET http://127.0.0.1:8000/evaluate/dashboard
+Accept: application/json
