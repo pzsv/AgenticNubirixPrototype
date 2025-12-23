@@ -11,7 +11,7 @@ router = APIRouter(prefix="/prepare", tags=["Prepare"])
 @router.post("/items", response_model=ConfigurationItem)
 async def create_ci(ci: ConfigurationItemCreate):
     ci_id = storage.add_ci(ci.model_dump())
-    return storage.cis[ci_id]
+    return storage.get_ci_by_id(ci_id)
 
 @router.get("/items", response_model=list[ConfigurationItem])
 async def list_cis():

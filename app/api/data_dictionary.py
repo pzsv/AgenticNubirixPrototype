@@ -53,10 +53,10 @@ async def list_fields(
 
 @router.post("/standard-values", response_model=StandardValue)
 async def create_standard_value(sv: StandardValueCreate):
-    if sv.field_id not in storage.data_fields:
+    if not storage.get_data_field_by_id(sv.field_id):
         raise HTTPException(status_code=404, detail="Field not found")
     sv_id = storage.add_standard_value(sv.model_dump())
-    return storage.standard_values[sv_id]
+    return storage.get_standard_value_by_id(sv_id)
 
 @router.get("/entities", response_model=List[str])
 async def list_entities():

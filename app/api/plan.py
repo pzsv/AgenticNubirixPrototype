@@ -10,7 +10,7 @@ router = APIRouter(prefix="/plan", tags=["Plan"])
 @router.post("/waves", response_model=MigrationWave)
 async def create_wave(wave: MigrationWaveCreate):
     wave_id = storage.add_wave(wave.model_dump())
-    return storage.waves[wave_id]
+    return storage.get_wave_by_id(wave_id)
 
 @router.get("/waves", response_model=list[MigrationWave])
 async def list_waves():

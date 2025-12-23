@@ -10,7 +10,7 @@ router = APIRouter(prefix="/move", tags=["Move"])
 @router.post("/runbooks", response_model=Runbook)
 async def create_runbook(runbook: RunbookCreate):
     runbook_id = storage.add_runbook(runbook.model_dump())
-    return storage.runbooks[runbook_id]
+    return storage.get_runbook_by_id(runbook_id)
 
 @router.get("/runbooks", response_model=list[Runbook])
 async def list_runbooks():
@@ -29,7 +29,7 @@ async def generate_runbook(workload_id: str):
         ]
     }
     runbook_id = storage.add_runbook(runbook_data)
-    return storage.runbooks[runbook_id]
+    return storage.get_runbook_by_id(runbook_id)
 
 @router.post("/ingest/runbooks")
 async def ingest_runbooks(file: UploadFile = File(...)):

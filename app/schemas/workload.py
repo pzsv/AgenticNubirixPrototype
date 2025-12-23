@@ -9,6 +9,8 @@ class Relationship(BaseModel):
 class WorkloadBase(BaseModel):
     name: str
     description: Optional[str] = None
+    environment: str = "PROD"
+    hosting_model: str = "On-Premise"
     ci_ids: List[str] = Field(default_factory=list)
     relationships: List[Relationship] = Field(default_factory=list)
 
@@ -21,4 +23,7 @@ class Workload(WorkloadBase):
 class Dependency(BaseModel):
     source_workload_id: str
     target_workload_id: str
+    environment: str = "PROD"
+    level: str = "Medium"
+    latency_sensitive: bool = False
     type: str = "dependency"
