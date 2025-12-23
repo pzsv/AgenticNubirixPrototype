@@ -73,8 +73,17 @@ class DatabaseStorage:
         }
         
         for entity, fields in entities.items():
+            entity_id = self.add_data_entity({"name": entity})
+            first_field_id = None
             for field_name in fields:
                 field_id = self.add_data_field({"name": field_name, "entity": entity})
+                ef_id = self.add_data_entity_field({"name": field_name, "entity_id": entity_id, "anchor": field_name.lower().replace(" ", "_")})
+                if first_field_id is None:
+                    first_field_id = ef_id
+            
+            if first_field_id:
+                self.update_data_entity(entity_id, {"key_field_id": first_field_id})
+                
                 if field_name == "Database Technology":
                     for val in ["Oracle", "PostgreSQL", "MySQL", "SQL Server", "MongoDB"]:
                         self.add_standard_value({"field_id": field_id, "value": val})
@@ -451,5 +460,117 @@ class DatabaseStorage:
             self.db.commit()
             return True
         return False
+
+    def add_data_entity(self, entity_data: Dict[str, Any]) -> str:
+        entity_id = entity_data.get("id") or str(uuid.uuid4())
+        db_entity = models.DataEntity(
+            id=entity_id,
+            name=entity_data["name"],
+            key_field_id=entity_data.get("key_field_id")
+        )
+        self.db.add(db_entity)
+        self.db.commit()
+        return entity_id
+
+    def get_data_entities(self) -> List[Dict[str, Any]]:
+        entities = self.db.query(models.DataEntity).all()
+        return [
+            {
+                "id": e.id,
+                "name": e.name,
+                "key_field_id": e.key_field_id,
+                "fields": [
+                    {"id": f.id, "name": f.name, "anchor": f.anchor, "entity_id": f.entity_id}
+                    for f in e.fields
+                ]
+            } for e in entities
+        ]
+
+    def get_data_entity_by_id(self, entity_id: str) -> Optional[Dict[str, Any]]:
+        e = self.db.query(models.DataEntity).filter(models.DataEntity.id == entity_id).first()
+        if e:
+            return {
+                "id": e.id,
+                "name": e.name,
+                "key_field_id": e.key_field_id,
+                "fields": [
+                    {"id": f.id, "name": f.name, "anchor": f.anchor, "entity_id": f.entity_id}
+                    for f in e.fields
+                ]
+            }
+        return None
+
+    def update_data_entity(self, entity_id: str, updates: Dict[str, Any]) -> bool:
+        db_entity = self.db.query(models.DataEntity).filter(models.DataEntity.id == entity_id).first()
+        if not db_entity:
+            return False
+        for key, value in updates.items():
+            if hasattr(db_entity, key):
+                setattr(db_entity, key, value)
+        self.db.commit()
+        return True
+
+    def delete_data_entity(self, entity_id: str) -> bool:
+        db_entity = self.db.query(models.DataEntity).filter(models.DataEntity.id == entity_id).first()
+        if not db_entity:
+            return False
+        self.db.delete(db_entity)
+        self.db.commit()
+        return True
+
+    def add_data_entity_field(self, field_data: Dict[str, Any]) -> str:
+        field_id = field_data.get("id") or str(uuid.uuid4())
+        db_field = models.DataEntityField(
+            id=field_id,
+            name=field_data["name"],
+            anchor=field_data.get("anchor"),
+            entity_id=field_data["entity_id"]
+        )
+        self.db.add(db_field)
+        self.db.commit()
+        return field_id
+
+    def get_data_entity_fields(self, entity_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        query = self.db.query(models.DataEntityField)
+        if entity_id:
+            query = query.filter(models.DataEntityField.entity_id == entity_id)
+        fields = query.all()
+        return [
+            {
+                "id": f.id,
+                "name": f.name,
+                "anchor": f.anchor,
+                "entity_id": f.entity_id
+            } for f in fields
+        ]
+
+    def get_data_entity_field_by_id(self, field_id: str) -> Optional[Dict[str, Any]]:
+        f = self.db.query(models.DataEntityField).filter(models.DataEntityField.id == field_id).first()
+        if f:
+            return {
+                "id": f.id,
+                "name": f.name,
+                "anchor": f.anchor,
+                "entity_id": f.entity_id
+            }
+        return None
+
+    def update_data_entity_field(self, field_id: str, updates: Dict[str, Any]) -> bool:
+        db_field = self.db.query(models.DataEntityField).filter(models.DataEntityField.id == field_id).first()
+        if not db_field:
+            return False
+        for key, value in updates.items():
+            if hasattr(db_field, key):
+                setattr(db_field, key, value)
+        self.db.commit()
+        return True
+
+    def delete_data_entity_field(self, field_id: str) -> bool:
+        db_field = self.db.query(models.DataEntityField).filter(models.DataEntityField.id == field_id).first()
+        if not db_field:
+            return False
+        self.db.delete(db_field)
+        self.db.commit()
+        return True
 
 storage = DatabaseStorage()

@@ -62,6 +62,25 @@ class DataField(Base):
     
     standard_values = relationship("StandardValue", back_populates="field", cascade="all, delete-orphan")
 
+class DataEntity(Base):
+    __tablename__ = "data_entities"
+
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String, index=True)
+    key_field_id = Column(String, ForeignKey("data_entity_fields.id", use_alter=True, name="fk_key_field"))
+
+    fields = relationship("DataEntityField", back_populates="entity", foreign_keys="DataEntityField.entity_id")
+
+class DataEntityField(Base):
+    __tablename__ = "data_entity_fields"
+
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String, index=True)
+    anchor = Column(String)
+    entity_id = Column(String, ForeignKey("data_entities.id"))
+
+    entity = relationship("DataEntity", back_populates="fields", foreign_keys=[entity_id])
+
 class StandardValue(Base):
     __tablename__ = "standard_values"
 
