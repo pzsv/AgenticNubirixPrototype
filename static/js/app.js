@@ -201,11 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             <p class="card-text text-muted small">Upload your spreadsheet file or manually input configuration items.</p>
                             <div class="d-flex gap-2">
                                 <button class="btn btn-outline-dark btn-sm"><i class="bi bi-download me-1"></i> Template</button>
-                                <button class="btn btn-dark btn-sm" onclick="showUploadModal()"><i class="bi bi-paperclip me-1"></i> Upload File</button>
+                                <button class="btn btn-dark btn-sm" onclick="window.showUploadModal()"><i class="bi bi-paperclip me-1"></i> Upload File</button>
                                 <button class="btn btn-outline-primary btn-sm" onclick="window.setPrepareStep('ingest')">View Data</button>
                             </div>
                             <div class="mt-3">
-                                <button class="btn btn-primary btn-sm w-100" onclick="showManualInputModal()">Manual Input</button>
+                                <button class="btn btn-primary btn-sm w-100" onclick="window.showManualInputModal()">Manual Input</button>
                             </div>
                         </div>
                     </div>
@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h4 class="mb-0">Ingest</h4>
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-outline-dark btn-sm" onclick="showUploadModal()">Upload Files</button>
+                    <button class="btn btn-outline-dark btn-sm" onclick="window.showUploadModal()">Upload Files</button>
                     <button class="btn btn-outline-dark btn-sm">Download Template</button>
                     <button class="btn btn-primary btn-sm" onclick="window.setPrepareStep('map')">Map Fields</button>
                 </div>
@@ -489,7 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fields.map(f => `<option value="${f.name}" ${selectedField === f.name ? 'selected' : ''}>${f.name}</option>`).join('');
     };
 
-    function showUploadModal() {
+    window.showUploadModal = () => {
         const modalHtml = `
             <div class="modal fade" id="uploadModal" tabindex="-1">
                 <div class="modal-dialog modal-lg">
@@ -601,7 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    async function showManualInputModal() {
+    window.showManualInputModal = async () => {
         const entitiesRes = await fetch('/data-dictionary/entities');
         const entities = await entitiesRes.json();
 
@@ -1102,7 +1102,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Module: Data Dictionary ---
-    async function renderDataDictionary(entityFilter = '', searchFilter = '') {
+    window.renderDataDictionary = async (entityFilter = '', searchFilter = '') => {
         const url = new URL('/data-dictionary/fields', window.location.origin);
         if (entityFilter) url.searchParams.append('entity', entityFilter);
         if (searchFilter) url.searchParams.append('search', searchFilter);
@@ -1206,11 +1206,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Add event listeners
         document.getElementById('dictionary-search').addEventListener('input', debounce((e) => {
-            renderDataDictionary(document.getElementById('dictionary-entity-filter').value, e.target.value);
+            window.renderDataDictionary(document.getElementById('dictionary-entity-filter').value, e.target.value);
         }, 500));
 
         document.getElementById('dictionary-entity-filter').addEventListener('change', (e) => {
-            renderDataDictionary(e.target.value, document.getElementById('dictionary-search').value);
+            window.renderDataDictionary(e.target.value, document.getElementById('dictionary-search').value);
         });
 
         const modalElement = document.getElementById('addStandardValueModal');
@@ -1234,15 +1234,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 modal.hide();
                 // Wait for modal animation
-                setTimeout(() => renderDataDictionary(entityFilter, searchFilter), 300);
+                setTimeout(() => window.renderDataDictionary(entityFilter, searchFilter), 300);
             }
         });
-        
-        window.renderFieldStandardValues = renderFieldStandardValues;
-        window.renderDataDictionary = renderDataDictionary;
     }
 
-    async function renderFieldStandardValues(fieldId) {
+    window.renderFieldStandardValues = async (fieldId) => {
         const response = await fetch(`/data-dictionary/fields?field_id=${fieldId}`);
         const fields = await response.json();
         if (fields.length === 0) return;
@@ -1329,7 +1326,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok) {
                 modal.hide();
-                setTimeout(() => renderFieldStandardValues(fieldId), 300);
+                setTimeout(() => window.renderFieldStandardValues(fieldId), 300);
             }
         });
     }
