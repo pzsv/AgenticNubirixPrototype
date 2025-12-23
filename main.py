@@ -28,7 +28,7 @@ async def root():
 @app.get("/api-status")
 async def api_status():
     return {
-        "message": "Welcome to the Data Centre Migration Prototype API",
+        "message": "Welccome to the Data Centre Migration Prototype API",
         "modules": [
             "Prepare: Ingest and manage CIs",
             "Map: Group CIs into workloads and define dependencies",
