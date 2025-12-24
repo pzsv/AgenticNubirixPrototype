@@ -29,6 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
         contentArea.innerHTML = '<div class="text-center mt-5"><div class="spinner-border" role="status"></div><p>Loading...</p></div>';
         
         switch(module) {
+            case 'help':
+                if (window.renderHelp) window.renderHelp();
+                break;
             case 'home':
                 if (window.renderHome) window.renderHome(context);
                 break;
