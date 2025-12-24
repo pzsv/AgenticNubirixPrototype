@@ -398,12 +398,25 @@ window.viewAWIGraph = (awiId) => {
 async function renderMapGraph(container) {
     console.log("Rendering Map Graph...");
     container.innerHTML = `
-        <div class="d-flex flex-column h-100">
+        <div class="d-flex flex-column h-100 position-relative">
             <div id="cy-map" style="flex-grow: 1; height: 650px; width: 100%; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; position: relative;">
                 <div id="cy-status" class="position-absolute top-50 start-50 translate-middle text-muted">
                     <div class="spinner-border spinner-border-sm me-2" role="status"></div>
                     Loading graph data...
                 </div>
+            </div>
+            
+            <!-- Graph Controls -->
+            <div class="graph-controls position-absolute top-0 end-0 m-3 d-flex flex-column gap-2" style="z-index: 10;">
+                <button class="btn btn-white shadow-sm border" id="zoom-in" title="Zoom In"><i class="bi bi-plus-lg"></i></button>
+                <button class="btn btn-white shadow-sm border" id="zoom-out" title="Zoom Out"><i class="bi bi-dash-lg"></i></button>
+                <button class="btn btn-white shadow-sm border" id="zoom-reset" title="Default Zoom / Center"><i class="bi bi-arrows-fullscreen"></i></button>
+            </div>
+
+            <!-- Mini Map / Navigator -->
+            <div id="cy-navigator-container" class="position-absolute bottom-0 start-0 m-3 shadow-sm border bg-white" style="width: 150px; height: 120px; z-index: 10; border-radius: 4px; overflow: hidden; display: none;">
+                <div id="cy-navigator" style="width: 100%; height: 100%;"></div>
+                <div id="cy-navigator-overlay" style="position: absolute; top: 0; left: 0; border: 1px solid #0d6efd; background: rgba(13, 110, 253, 0.1); pointer-events: none;"></div>
             </div>
         </div>
     `;
@@ -516,7 +529,7 @@ function initCytoscape(elements) {
         }
 
         try {
-            cytoscape({
+            const cy = window.cy = cytoscape({
                 container: cyContainer,
                 elements: elements,
                 style: [
@@ -574,8 +587,108 @@ function initCytoscape(elements) {
                 }
             });
             console.log("Cytoscape initialized successfully");
+            
+            initGraphControls(cy);
+            initGraphNavigator(cy, elements);
+
         } catch (cyError) {
             console.error("Cytoscape initialization failed:", cyError);
         }
     }, 100);
+}
+
+function initGraphControls(cy) {
+    const zoomInBtn = document.getElementById('zoom-in');
+    const zoomOutBtn = document.getElementById('zoom-out');
+    const zoomResetBtn = document.getElementById('zoom-reset');
+
+    if (zoomInBtn) {
+        zoomInBtn.onclick = () => {
+            cy.zoom(cy.zoom() * 1.2);
+        };
+    }
+
+    if (zoomOutBtn) {
+        zoomOutBtn.onclick = () => {
+            cy.zoom(cy.zoom() / 1.2);
+        };
+    }
+
+    if (zoomResetBtn) {
+        zoomResetBtn.onclick = () => {
+            cy.fit();
+            cy.center();
+        };
+    }
+}
+
+function initGraphNavigator(mainCy, elements) {
+    const navContainer = document.getElementById('cy-navigator');
+    const navWrapper = document.getElementById('cy-navigator-container');
+    const overlay = document.getElementById('cy-navigator-overlay');
+    
+    if (!navContainer || !navWrapper) return;
+
+    // Show the navigator container
+    navWrapper.style.display = 'block';
+
+    const navCy = cytoscape({
+        container: navContainer,
+        elements: JSON.parse(JSON.stringify(elements)),
+        style: mainCy.style().json(),
+        userZoomingEnabled: false,
+        userPanningEnabled: false,
+        boxSelectionEnabled: false,
+        autoungrabify: true,
+        layout: { name: 'preset' }
+    });
+
+    const updateNavPositions = () => {
+        mainCy.nodes().forEach(node => {
+            const navNode = navCy.getElementById(node.id());
+            if (navNode.length) {
+                navNode.position(node.position());
+            }
+        });
+        navCy.fit();
+        updateOverlay();
+    };
+
+    const updateOverlay = () => {
+        const extent = mainCy.extent();
+        
+        // Convert model coordinates to nav container coordinates
+        const zoom = navCy.zoom();
+        const pan = navCy.pan();
+
+        const x1 = extent.x1 * zoom + pan.x;
+        const y1 = extent.y1 * zoom + pan.y;
+        const x2 = extent.x2 * zoom + pan.x;
+        const y2 = extent.y2 * zoom + pan.y;
+
+        const navWidth = navContainer.clientWidth;
+        const navHeight = navContainer.clientHeight;
+
+        const left = Math.max(0, x1);
+        const top = Math.max(0, y1);
+        const width = Math.min(navWidth - left, x2 - x1);
+        const height = Math.min(navHeight - top, y2 - y1);
+
+        overlay.style.left = left + 'px';
+        overlay.style.top = top + 'px';
+        overlay.style.width = Math.max(0, width) + 'px';
+        overlay.style.height = Math.max(0, height) + 'px';
+    };
+
+    mainCy.on('layoutstop', () => {
+        updateNavPositions();
+        updateOverlay();
+    });
+
+    mainCy.on('viewport', updateOverlay);
+    mainCy.on('position', 'node', updateNavPositions);
+    
+    // Initial update if layout already finished
+    updateNavPositions();
+    updateOverlay();
 }
