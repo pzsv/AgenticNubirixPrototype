@@ -167,6 +167,20 @@ async def run_scan(scan_id: str):
         "results": results
     })
     
+    # Also create/update Data Source entry for this scan
+    storage.add_data_source({
+        "name": f"Scan: {scan.name}",
+        "source_type": "Network Scan",
+        "data_ingested": f"Range: {scan.target_range}",
+        "last_sync": datetime.now().strftime("%b %d, %Y, %I:%M:%S %p"),
+        "records": len(results),
+        "sync_count": 1,
+        "status": "Success",
+        "process": True,
+        "config": {"scan_id": scan_id},
+        "rating": "high"
+    })
+    
     # Also create Raw Data Entities for the discovered items
     for item in results:
         raw_entity_id = storage.add_raw_data_entity({
@@ -229,4 +243,18 @@ async def ingest_cis(file: UploadFile = File(...)):
         except Exception:
             continue
             
+    # Also create a Data Source entry for this ingestion
+    storage.add_data_source({
+        "name": f"Direct Ingest: {file.filename}",
+        "source_type": "Excel" if file.filename.endswith(('.xls', '.xlsx')) else "CSV",
+        "data_ingested": "Direct CI Ingest",
+        "last_sync": datetime.now().strftime("%b %d, %Y, %I:%M:%S %p"),
+        "records": ingested_count,
+        "sync_count": 1,
+        "status": "Success",
+        "process": True,
+        "config": {"filename": file.filename},
+        "rating": "high"
+    })
+    
     return {"message": f"Successfully ingested {ingested_count} items"}

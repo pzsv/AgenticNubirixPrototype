@@ -6,81 +6,104 @@
     <title>Nubirix - Data Centre Migration</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <div class="wrapper">
         <!-- Sidebar -->
         <nav id="sidebar">
+            <button type="button" id="sidebarCollapse" class="btn btn-light shadow-sm">
+                <i class="bi bi-chevron-left"></i>
+            </button>
             <div class="sidebar-header">
-                <div class="mb-4">
-                    <img src="/static/logo.svg" alt="Nubirix" height="24">
+                <div class="mb-5">
+                    <img src="/static/logo.svg" alt="Nubirix" height="30">
                 </div>
                 <div class="account-section">
-                    <small class="text-uppercase text-muted">Account</small>
-                    <p class="mb-0 fw-bold">Bell Integration</p>
+                    <small class="text-uppercase text-muted fw-bold">Account</small>
+                    <p class="mb-0">Bell Integration</p>
                 </div>
                 <div class="project-section mt-3">
-                    <small class="text-uppercase text-muted">Project</small>
-                    <select class="form-select form-select-sm mt-1">
+                    <small class="text-uppercase text-muted fw-bold">Project</small>
+                    <select class="form-select form-select-sm mt-1 border-0 bg-light">
                         <option selected>PV_test_2</option>
                     </select>
                 </div>
             </div>
 
-            <ul class="list-unstyled components">
-                <p class="text-uppercase text-muted small px-3 mb-1">OLD MENU</p>
-                <li>
-                    <a href="#" data-module="home" data-context="old"><i class="bi bi-house-door me-2"></i> Home</a>
-                </li>
-                <li>
-                    <a href="#" data-module="prepare-old" data-context="old"><i class="bi bi-search me-2"></i> Prepare</a>
-                </li>
-                <li>
-                    <a href="#" data-module="map" data-context="old"><i class="bi bi-diagram-3 me-2"></i> Map</a>
-                </li>
-                <li>
-                    <a href="#" data-module="plan" data-context="old"><i class="bi bi-calendar-event me-2"></i> Plan</a>
-                </li>
-                <li>
-                    <a href="#" data-module="move" data-context="old"><i class="bi bi-arrow-repeat me-2"></i> Move</a>
-                </li>
-                <li>
-                    <a href="#" data-module="evaluate" data-context="old"><i class="bi bi-bar-chart me-2"></i> Evaluate</a>
-                </li>
+            <div class="components">
+                <!-- OLD MENU Section -->
+                <div class="menu-section mt-4">
+                    <div class="px-3 mb-1 d-flex justify-content-between align-items-center collapsed" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#oldMenuCollapse">
+                        <small class="text-uppercase text-muted fw-bold">Old Menu</small>
+                        <i class="bi bi-chevron-down small text-muted"></i>
+                    </div>
+                    <div class="collapse" id="oldMenuCollapse">
+                        <ul class="list-unstyled">
+                            <li><a href="#" data-module="home" data-context="old"><i class="bi bi-house-door me-2"></i> <span>Home</span></a></li>
+                            <li><a href="#" data-module="prepare-old" data-context="old"><i class="bi bi-search me-2"></i> <span>Prepare</span></a></li>
+                            <li><a href="#" data-module="map" data-context="old"><i class="bi bi-diagram-3 me-2"></i> <span>Map</span></a></li>
+                            <li><a href="#" data-module="plan" data-context="old"><i class="bi bi-calendar-event me-2"></i> <span>Plan</span></a></li>
+                            <li><a href="#" data-module="move" data-context="old"><i class="bi bi-arrow-repeat me-2"></i> <span>Move</span></a></li>
+                            <li><a href="#" data-module="evaluate" data-context="old"><i class="bi bi-bar-chart me-2"></i> <span>Evaluate</span></a></li>
+                        </ul>
+                    </div>
+                </div>
 
-                <p class="text-uppercase text-muted small px-3 mt-4 mb-1">Menu</p>
-                <li class="active">
-                    <a href="#" data-module="home" data-context="modern"><i class="bi bi-house-door me-2"></i> Home</a>
-                </li>
-                <li>
-                    <a href="#" data-module="prepare" data-context="modern"><i class="bi bi-search me-2"></i> Prepare</a>
-                </li>
-                <li>
-                    <a href="#" data-module="map" data-context="modern"><i class="bi bi-diagram-3 me-2"></i> Map</a>
-                </li>
-                <li>
-                    <a href="#" data-module="plan" data-context="modern"><i class="bi bi-calendar-event me-2"></i> Plan</a>
-                </li>
-                <li>
-                    <a href="#" data-module="move" data-context="modern"><i class="bi bi-arrow-repeat me-2"></i> Move</a>
-                </li>
-                <li>
-                    <a href="#" data-module="evaluate" data-context="modern"><i class="bi bi-bar-chart me-2"></i> Evaluate</a>
-                </li>
+                <!-- MENU Section -->
+                <div class="menu-section mt-4">
+                    <div class="px-3 mb-1">
+                        <small class="text-uppercase text-muted fw-bold">Menu</small>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li class="active">
+                            <a href="#" data-module="home" data-context="modern"><i class="bi bi-house-door me-2"></i> <span>Home</span></a>
+                        </li>
+                        <li>
+                            <a href="#" data-module="prepare" data-context="modern"><i class="bi bi-search me-2"></i> <span>Prepare</span></a>
+                        </li>
+                        <li>
+                            <a href="#" data-module="map" data-context="modern"><i class="bi bi-diagram-3 me-2"></i> <span>Map</span></a>
+                        </li>
+                        <li>
+                            <a href="#" data-module="plan" data-context="modern"><i class="bi bi-calendar-event me-2"></i> <span>Plan</span></a>
+                        </li>
+                        <li>
+                            <a href="#" data-module="move" data-context="modern"><i class="bi bi-arrow-repeat me-2"></i> <span>Move</span></a>
+                        </li>
+                        <li>
+                            <a href="#" data-module="evaluate" data-context="modern"><i class="bi bi-bar-chart me-2"></i> <span>Evaluate</span></a>
+                        </li>
+                    </ul>
+                </div>
 
-                <p class="text-uppercase text-muted small px-3 mt-4 mb-1">Admin Panel</p>
-                <li><a href="#"><i class="bi bi-kanban me-2"></i> Project Management</a></li>
-                <li><a href="#"><i class="bi bi-people me-2"></i> User Management</a></li>
-                <li><a href="#" data-module="data-entities"><i class="bi bi-diagram-2 me-2"></i> Data Entities</a></li>
-                <li><a href="#" data-module="raw-data"><i class="bi bi-file-earmark-text me-2"></i> Raw Data</a></li>
-                <li><a href="#"><i class="bi bi-database me-2"></i> Reference Data</a></li>
-                <li><a href="#"><i class="bi bi-exclamation-triangle me-2"></i> Process Failures</a></li>
-                <li><a href="#"><i class="bi bi-journal-text me-2"></i> Move Principles</a></li>
+                <!-- DATA MANAGEMENT Section -->
+                <div class="menu-section mt-4">
+                    <div class="px-3 mb-1">
+                        <small class="text-uppercase text-muted fw-bold">Data Management</small>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li><a href="#" data-module="data-entities"><i class="bi bi-diagram-2 me-2"></i> <span>Data Entities</span></a></li>
+                        <li><a href="#" data-module="raw-data"><i class="bi bi-file-earmark-text me-2"></i> <span>Raw Data</span></a></li>
+                        <li><a href="#" data-module="data-dictionary"><i class="bi bi-book me-2"></i> <span>Data Dictionary</span></a></li>
+                    </ul>
+                </div>
 
-                <p class="text-uppercase text-muted small px-3 mt-4 mb-1">Settings</p>
-                <li><a href="#" data-module="data-dictionary"><i class="bi bi-book me-2"></i> Data Dictionary</a></li>
-            </ul>
+                <!-- ADMIN PANEL Section -->
+                <div class="menu-section mt-4">
+                    <div class="px-3 mb-1">
+                        <small class="text-uppercase text-muted fw-bold">Admin Panel</small>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li><a href="#"><i class="bi bi-kanban me-2"></i> <span>Project Management</span></a></li>
+                        <li><a href="#"><i class="bi bi-people me-2"></i> <span>User Management</span></a></li>
+                        <li><a href="#"><i class="bi bi-database me-2"></i> <span>Reference Data</span></a></li>
+                        <li><a href="#"><i class="bi bi-exclamation-triangle me-2"></i> <span>Process Failures</span></a></li>
+                        <li><a href="#"><i class="bi bi-journal-text me-2"></i> <span>Move Principles</span></a></li>
+                    </ul>
+                </div>
+            </div>
         </nav>
 
         <!-- Page Content -->
@@ -88,9 +111,7 @@
             <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
                 <div class="container-fluid">
                     <div class="d-flex align-items-center">
-                        <span class="navbar-brand">
-                            <img src="/static/logo.svg" alt="Nubirix" height="24">
-                        </span>
+                        <!-- Logo removed from here as per requirement -->
                     </div>
                     <div class="d-flex align-items-center">
                         <div class="position-relative me-3">

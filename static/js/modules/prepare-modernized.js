@@ -76,7 +76,7 @@ async function renderPrepareStep() {
             renderPrepareModernOverview(stepArea);
             break;
         case 'discover':
-            renderPrepareDiscover(stepArea);
+            await renderPrepareDiscover(stepArea);
             break;
         case 'stage':
             renderPrepareStage(stepArea);
@@ -336,60 +336,77 @@ function renderPrepareModernOverview(container) {
     `;
 }
 
-function renderPrepareDiscover(container) {
-    const activeSub = prepareState.discoverSubview || 'sources';
+async function renderPrepareDiscover(container) {
+    const activeSub = prepareState.discoverSubview || 'overview';
     
     container.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="mb-0">Discover & Ingest</h4>
-            <div class="btn-group">
-                <button class="btn btn-primary btn-sm" onclick="window.showUploadModalOld()"><i class="bi bi-plus-lg me-1"></i> Add Source</button>
-            </div>
         </div>
         
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body">
-                        <h6 class="fw-bold mb-3">Ingestion Methods</h6>
-                        <div class="list-group list-group-flush">
-                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-0 ${activeSub === 'sources' ? 'fw-bold text-primary' : ''}" onclick="window.setDiscoverSubview('sources')">
-                                <span><i class="bi bi-file-earmark-excel me-2 text-success"></i> Data Sources</span>
-                                <span class="badge bg-light text-dark rounded-pill">3 active</span>
-                            </a>
-                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-0 ${activeSub === 'scans' ? 'fw-bold text-primary' : ''}" onclick="window.setDiscoverSubview('scans')">
-                                <span><i class="bi bi-broadcast me-2 text-info"></i> Network Scan</span>
-                                <span class="badge bg-primary text-white rounded-pill">v1</span>
-                            </a>
-                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-0">
-                                <span><i class="bi bi-database-fill me-2 text-primary"></i> CMDB Connect</span>
-                                <span class="badge bg-light text-dark rounded-pill">Soon</span>
-                            </a>
-                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-0">
-                                <span><i class="bi bi-pencil-square me-2 text-warning"></i> Manual Entry</span>
-                                <span class="badge bg-light text-dark rounded-pill">42 items</span>
-                            </a>
+        <div class="mb-5">
+            <h6 class="fw-bold mb-3">Ingestion Methods</h6>
+            <div class="row g-4">
+                <div class="col-md-3">
+                    <div class="card shadow-sm h-100 cursor-pointer hover-shadow border-0" onclick="window.showUploadModalOld()">
+                        <div class="card-body text-center py-4">
+                            <i class="bi bi-file-earmark-excel fs-1 text-success mb-2"></i>
+                            <h6 class="mb-1">File Ingestion</h6>
+                            <p class="small text-muted mb-0">Upload Excel or CSV files</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm h-100 cursor-pointer hover-shadow ${activeSub === 'scans' ? 'border border-primary' : 'border-0'}" onclick="window.setDiscoverSubview('scans')">
+                        <div class="card-body text-center py-4">
+                            <i class="bi bi-broadcast fs-1 text-info mb-2"></i>
+                            <h6 class="mb-1">Network Scan</h6>
+                            <p class="small text-muted mb-0">Discover assets on network</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm h-100 border-0 opacity-75">
+                        <div class="card-body text-center py-4">
+                            <i class="bi bi-database-fill fs-1 text-primary mb-2"></i>
+                            <h6 class="mb-1">CMDB Connect</h6>
+                            <p class="small text-muted mb-0">Sync from ServiceNow/Jira</p>
+                            <span class="badge bg-light text-dark rounded-pill mt-2">Soon</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm h-100 border-0 opacity-75">
+                        <div class="card-body text-center py-4">
+                            <i class="bi bi-pencil-square fs-1 text-warning mb-2"></i>
+                            <h6 class="mb-1">Manual Entry</h6>
+                            <p class="small text-muted mb-0">Add assets individually</p>
+                            <span class="badge bg-light text-dark rounded-pill mt-2">v2</span>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="col-md-8" id="discover-subview-container">
-                <div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>
-            </div>
         </div>
+
+        <div id="method-details-container" class="mb-5" style="${activeSub === 'scans' ? '' : 'display: none;'}"></div>
+
+        <div id="data-sources-container"></div>
     `;
 
-    if (activeSub === 'sources') {
-        renderActiveSources(document.getElementById('discover-subview-container'));
-    } else if (activeSub === 'scans') {
-        window.renderNetworkScanView(document.getElementById('discover-subview-container'));
+    renderActiveSources(document.getElementById('data-sources-container'));
+    
+    if (activeSub === 'scans') {
+        await window.renderNetworkScanView(document.getElementById('method-details-container'));
     }
 }
 
-window.setDiscoverSubview = (subview) => {
-    prepareState.discoverSubview = subview;
-    renderPrepareDiscover(document.getElementById('prepare-modern-content'));
+window.setDiscoverSubview = async (subview) => {
+    if (prepareState.discoverSubview === subview) {
+        prepareState.discoverSubview = 'overview';
+    } else {
+        prepareState.discoverSubview = subview;
+    }
+    await renderPrepareStep();
 };
 
 async function renderActiveSources(container) {
@@ -557,7 +574,7 @@ window.createNewScan = async () => {
 window.runNetworkScan = async (scanId) => {
     const response = await fetch(`/prepare/scans/${scanId}/run`, { method: 'POST' });
     if (response.ok) {
-        window.setDiscoverSubview('scans');
+        await window.setDiscoverSubview('scans');
         // View results of the run
         window.viewScanResults(scanId);
     }

@@ -1,6 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const sidebar = document.getElementById('sidebar');
+    const sidebarCollapse = document.getElementById('sidebarCollapse');
     const navLinks = document.querySelectorAll('#sidebar a[data-module]');
     const contentArea = document.getElementById('main-area');
+
+    if (sidebarCollapse) {
+        sidebarCollapse.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+        });
+    }
 
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
