@@ -58,3 +58,24 @@ def test_ingestion_csv_mock():
     response = client.get("/prepare/items")
     items = response.json()
     assert any(item["name"] == "ServerCSV" for item in items)
+
+def test_graph_data_endpoints():
+    # Test all three endpoints used by the graph visualization
+    
+    # 1. Map Workloads
+    response = client.get("/map/workloads")
+    assert response.status_code == 200
+    workloads = response.json()
+    assert isinstance(workloads, list)
+    
+    # 2. Prepare Items
+    response = client.get("/prepare/items")
+    assert response.status_code == 200
+    items = response.json()
+    assert isinstance(items, list)
+    
+    # 3. Map Dependencies
+    response = client.get("/map/dependencies")
+    assert response.status_code == 200
+    deps = response.json()
+    assert isinstance(deps, list)

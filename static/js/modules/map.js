@@ -1,6 +1,12 @@
 // --- Module: Map ---
 let mapState = {
-    currentStep: 'awis'
+    currentStep: 'awis',
+    viewType: 'table' // 'table' or 'graph'
+};
+
+window.setMapViewType = (type) => {
+    mapState.viewType = type;
+    renderMap();
 };
 
 window.setMapStep = (step) => {
@@ -22,10 +28,15 @@ async function renderMap() {
                     <div class="step ${mapState.currentStep === 'dependency-links' ? 'active' : ''}" onclick="window.setMapStep('dependency-links')">
                         Dependency Links
                     </div>
-                    <div class="step-line"></div>
-                    <div class="step ${mapState.currentStep === 'wave-mappings' ? 'active' : ''}" onclick="window.setMapStep('wave-mappings')">
-                        Wave Mappings
-                    </div>
+                </div>
+
+                <div class="btn-group ms-2">
+                    <button class="btn btn-outline-secondary ${mapState.viewType === 'table' ? 'active' : ''}" onclick="window.setMapViewType('table')">
+                        <i class="bi bi-table me-1"></i> Table
+                    </button>
+                    <button class="btn btn-outline-secondary ${mapState.viewType === 'graph' ? 'active' : ''}" onclick="window.setMapViewType('graph')">
+                        <i class="bi bi-diagram-3 me-1"></i> Graph
+                    </button>
                 </div>
                 
                 <div class="dropdown">
@@ -289,12 +300,12 @@ async function renderMapStep() {
     const stepArea = document.getElementById('map-content');
     if (!stepArea) return;
 
-    if (mapState.currentStep === 'awis') {
+    if (mapState.viewType === 'graph') {
+        await renderMapGraph(stepArea);
+    } else if (mapState.currentStep === 'awis') {
         await renderMapAWIs(stepArea);
     } else if (mapState.currentStep === 'dependency-links') {
         await renderMapDependencyLinks(stepArea);
-    } else {
-        stepArea.innerHTML = `<div class="text-center py-5 text-muted"><h4>${mapState.currentStep}</h4><p>Coming soon...</p></div>`;
     }
 }
 
@@ -325,7 +336,7 @@ async function renderMapAWIs(container) {
                                 <td>${w.ci_ids ? w.ci_ids.length : 0} assets</td>
                                 <td class="text-muted small">${w.description || ''}</td>
                                 <td class="text-end pe-4">
-                                    <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="window.viewAWIGraph('${w.id}')" title="View in Graph"><i class="bi bi-eye"></i></button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -379,4 +390,192 @@ async function renderMapDependencyLinks(container) {
     `;
 }
 
+window.viewAWIGraph = (awiId) => {
+    mapState.viewType = 'graph';
+    renderMap();
+};
+
+async function renderMapGraph(container) {
+    console.log("Rendering Map Graph...");
+    container.innerHTML = `
+        <div class="d-flex flex-column h-100">
+            <div id="cy-map" style="flex-grow: 1; height: 650px; width: 100%; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; position: relative;">
+                <div id="cy-status" class="position-absolute top-50 start-50 translate-middle text-muted">
+                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                    Loading graph data...
+                </div>
+            </div>
+        </div>
+    `;
+    
+    try {
+        console.log("Fetching workloads, items, and dependencies...");
+        const [wlRes, ciRes, depRes] = await Promise.all([
+            fetch('/map/workloads'),
+            fetch('/prepare/items'),
+            fetch('/map/dependencies')
+        ]);
+        
+        if (!wlRes.ok || !ciRes.ok || !depRes.ok) {
+            throw new Error(`Failed to fetch graph data: ${wlRes.status} / ${ciRes.status} / ${depRes.status}`);
+        }
+
+        const workloads = await wlRes.json();
+        const cis = await ciRes.json();
+        const dependencies = await depRes.json();
+        
+        console.log(`Data loaded: ${workloads.length} workloads, ${cis.length} CIs, ${dependencies.length} dependencies`);
+
+        const elements = [];
+        
+        // Create Workload parent nodes
+        workloads.forEach(wl => {
+            elements.push({
+                data: { id: `wl-${wl.id}`, label: `${wl.name}\n(${wl.environment})`, type: 'workload' }
+            });
+            
+            // Add CIs that belong to this workload
+            if (wl.ci_ids) {
+                wl.ci_ids.forEach(ciId => {
+                    const ci = cis.find(c => c.id === ciId);
+                    if (ci) {
+                        elements.push({
+                            data: { 
+                                id: `ci-${ci.id}-wl-${wl.id}`, // Unique ID per workload instance
+                                label: ci.name, 
+                                parent: `wl-${wl.id}`,
+                                type: 'ci'
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
+        // Add dependencies between workloads
+        dependencies.forEach((dep, index) => {
+            const sourceExists = workloads.some(w => w.id === dep.source_workload_id);
+            const targetExists = workloads.some(w => w.id === dep.target_workload_id);
+            
+            if (sourceExists && targetExists) {
+                elements.push({
+                    data: { 
+                        id: `dep-${index}`, 
+                        source: `wl-${dep.source_workload_id}`, 
+                        target: `wl-${dep.target_workload_id}`,
+                        label: dep.level
+                    }
+                });
+            } else {
+                console.warn(`Skipping dependency ${index}: source or target workload not found`, dep);
+            }
+        });
+
+        const statusElem = document.getElementById('cy-status');
+        if (elements.length === 0) {
+            if (statusElem) statusElem.innerHTML = `<i class="bi bi-info-circle me-2"></i> No data available to display in graph.`;
+            return;
+        }
+
+        if (statusElem) statusElem.remove();
+        initCytoscape(elements);
+    } catch (error) {
+        console.error("Error rendering graph:", error);
+        const cyMap = document.getElementById('cy-map');
+        if (cyMap) {
+            cyMap.innerHTML = `<div class="alert alert-danger m-3">
+                <h6 class="alert-heading fw-bold"><i class="bi bi-exclamation-octagon-fill me-2"></i>Graph Loading Error</h6>
+                <p class="mb-0 small">${error.message}</p>
+                <hr>
+                <button class="btn btn-sm btn-outline-danger" onclick="renderMap()">Retry</button>
+            </div>`;
+        }
+    }
+}
+
 window.renderMap = renderMap;
+
+function initCytoscape(elements) {
+    if (typeof cytoscape === 'undefined') {
+        console.error("Cytoscape library not found!");
+        const container = document.getElementById('cy-map');
+        if (container) {
+            container.innerHTML = `<div class="p-5 text-center text-danger">
+                <i class="bi bi-exclamation-triangle fs-1"></i>
+                <p class="mt-3">Visualization library (Cytoscape) could not be loaded. Please check your internet connection.</p>
+            </div>`;
+        }
+        return;
+    }
+
+    setTimeout(() => {
+        const cyContainer = document.getElementById('cy-map');
+        if (!cyContainer) {
+            console.error("Graph container not found in DOM");
+            return;
+        }
+
+        try {
+            cytoscape({
+                container: cyContainer,
+                elements: elements,
+                style: [
+                    {
+                        selector: 'node[type="workload"]',
+                        style: {
+                            'label': 'data(label)',
+                            'background-color': '#f8f9fa',
+                            'border-width': 2,
+                            'border-color': '#0d6efd',
+                            'shape': 'round-rectangle',
+                            'text-valign': 'top',
+                            'text-halign': 'center',
+                            'text-margin-y': -10,
+                            'font-size': '12px',
+                            'font-weight': 'bold',
+                            'padding': '20px',
+                            'color': '#0d6efd',
+                            'text-wrap': 'wrap'
+                        }
+                    },
+                    {
+                        selector: 'node[type="ci"]',
+                        style: {
+                            'label': 'data(label)',
+                            'background-color': '#fff',
+                            'border-width': 1,
+                            'border-color': '#dee2e6',
+                            'shape': 'round-rectangle',
+                            'font-size': '10px',
+                            'text-valign': 'center',
+                            'width': '100px',
+                            'height': '35px',
+                            'color': '#495057'
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 2,
+                            'line-color': '#6c757d',
+                            'target-arrow-color': '#6c757d',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier',
+                            'label': 'data(label)',
+                            'font-size': '8px',
+                            'text-rotation': 'autorotate'
+                        }
+                    }
+                ],
+                layout: {
+                    name: 'cose',
+                    padding: 30,
+                    nodeRepulsion: 4000
+                }
+            });
+            console.log("Cytoscape initialized successfully");
+        } catch (cyError) {
+            console.error("Cytoscape initialization failed:", cyError);
+        }
+    }, 100);
+}

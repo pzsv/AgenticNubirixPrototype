@@ -4,13 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dd3a8f81-e856-4b78-92eb-8eb6000a4067" name="Changes" comment="Old and new Menu sections show correcct versions of Prepare and the rest of the modules">
+    <list default="true" id="dd3a8f81-e856-4b78-92eb-8eb6000a4067" name="Changes" comment="Data Sources in Prepare module reflect all ingestion types and are separated into a new section">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/prepare.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/prepare.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/static/css/style.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/storage.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/storage.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prototype.db" beforeDir="false" afterPath="$PROJECT_DIR$/prototype.db" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/static/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/static/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/js/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/app.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/js/modules/prepare-modernized.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/prepare-modernized.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/map.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/map.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_prototype.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_prototype.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -84,7 +84,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1766544897662</updated>
-      <workItem from="1766544898713" duration="2708000" />
+      <workItem from="1766544898713" duration="3894000" />
     </task>
     <task id="LOCAL-00001" summary="app.js split between modules and features">
       <option name="closed" value="true" />
@@ -102,7 +102,15 @@
       <option name="project" value="LOCAL" />
       <updated>1766546088197</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Data Sources in Prepare module reflect all ingestion types and are separated into a new section">
+      <option name="closed" value="true" />
+      <created>1766547647250</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1766547647250</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -111,7 +119,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="app.js split between modules and features" />
     <MESSAGE value="Old and new Menu sections show correcct versions of Prepare and the rest of the modules" />
-    <option name="LAST_COMMIT_MESSAGE" value="Old and new Menu sections show correcct versions of Prepare and the rest of the modules" />
+    <MESSAGE value="Data Sources in Prepare module reflect all ingestion types and are separated into a new section" />
+    <option name="LAST_COMMIT_MESSAGE" value="Data Sources in Prepare module reflect all ingestion types and are separated into a new section" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/AgenticNubirixPrototype$main.coverage" NAME="main Coverage Results" MODIFIED="1766544913395" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
