@@ -6,21 +6,23 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             const module = link.getAttribute('data-module');
+            const context = link.getAttribute('data-context') || 'modern';
             
             // Update active link
             document.querySelectorAll('#sidebar li').forEach(li => li.classList.remove('active'));
             link.parentElement.classList.add('active');
             
-            loadModule(module);
+            loadModule(module, context);
         });
     });
 
-    async function loadModule(module) {
+    async function loadModule(module, context = 'modern') {
+        window.currentModule = module;
         contentArea.innerHTML = '<div class="text-center mt-5"><div class="spinner-border" role="status"></div><p>Loading...</p></div>';
         
         switch(module) {
             case 'home':
-                if (window.renderHome) window.renderHome();
+                if (window.renderHome) window.renderHome(context);
                 break;
             case 'prepare-old':
                 if (window.renderPrepareOld) await window.renderPrepareOld();
@@ -56,11 +58,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial load
     if (window.renderHome) {
-        window.renderHome();
+        window.currentModule = 'home';
+        window.renderHome('modern');
     } else {
         // Fallback if home.js is not loaded yet
         setTimeout(() => {
-            if (window.renderHome) window.renderHome();
+            if (window.renderHome) {
+                window.currentModule = 'home';
+                window.renderHome('modern');
+            }
         }, 100);
     }
 });

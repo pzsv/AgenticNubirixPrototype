@@ -1,26 +1,24 @@
 // --- Module: Home ---
-function renderHome() {
+function renderHome(context = 'modern') {
     const contentArea = document.getElementById('main-area');
+    const prepareModule = context === 'old' ? 'prepare-old' : 'prepare';
+    const prepareDesc = context === 'old' 
+        ? 'Legacy data discovery and ingestion workflow.' 
+        : 'Modernized data discovery and ingestion platform.';
+    const prepareIcon = context === 'old' ? 'bi-search' : 'bi-speedometer2';
+
     const html = `
         <div class="container text-center py-5">
             <h1 class="fw-bold">Workload Overview</h1>
-            <p class="text-muted mb-5">Understand your data centre estate in six structured phases.<br>Follow the process from discovery to evaluation.</p>
+            <p class="text-muted mb-5">Understand your data centre estate in five structured phases.<br>Follow the process from discovery to evaluation.</p>
             
             <div class="row g-4 mb-5">
                 <div class="col">
-                    <div class="phase-card prepare-old">
-                        <div class="phase-icon"><i class="bi bi-search"></i></div>
-                        <h5 class="fw-bold">Prepare</h5>
-                        <p class="small text-muted">Legacy data discovery and ingestion workflow.</p>
-                        <a href="#" class="btn-start-phase" onclick="document.querySelector('[data-module=\\'prepare-old\\']').click()">Start Phase &rarr;</a>
-                    </div>
-                </div>
-                <div class="col">
                     <div class="phase-card prepare">
-                        <div class="phase-icon"><i class="bi bi-speedometer2"></i></div>
+                        <div class="phase-icon"><i class="bi ${prepareIcon}"></i></div>
                         <h5 class="fw-bold">Prepare</h5>
-                        <p class="small text-muted">Modernized data discovery and ingestion platform.</p>
-                        <a href="#" class="btn-start-phase" onclick="document.querySelector('[data-module=\\'prepare\\']').click()">Start Phase &rarr;</a>
+                        <p class="small text-muted">${prepareDesc}</p>
+                        <a href="#" class="btn-start-phase" onclick="document.querySelector('[data-module=\\'${prepareModule}\\']').click()">Start Phase &rarr;</a>
                     </div>
                 </div>
                 <div class="col">

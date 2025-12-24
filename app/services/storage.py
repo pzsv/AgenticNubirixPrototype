@@ -18,6 +18,73 @@ class DatabaseStorage:
             self._seed_raw_data()
         if self.db.query(models.NetworkScan).count() == 0:
             self._seed_network_scans()
+        if self.db.query(models.Workload).count() == 0:
+            self._seed_cis_workloads_dependencies()
+
+    def _seed_cis_workloads_dependencies(self):
+        # 1. Seed CIs
+        cis = [
+            {"name": "SRV-APPS-01", "type": "Virtual Server", "description": "Production App Server 1", "properties": {"OS": "Ubuntu 22.04", "RAM": "16GB"}},
+            {"name": "SRV-APPS-02", "type": "Virtual Server", "description": "Production App Server 2", "properties": {"OS": "Ubuntu 22.04", "RAM": "16GB"}},
+            {"name": "SRV-DB-01", "type": "Virtual Server", "description": "Production DB Server 1", "properties": {"OS": "RHEL 9", "RAM": "32GB"}},
+            {"name": "CUST-DB-01", "type": "Database", "description": "Customer Database", "properties": {"Technology": "PostgreSQL", "Version": "15.4"}},
+        ]
+        ci_ids = {}
+        for ci in cis:
+            ci_ids[ci["name"]] = self.add_ci(ci)
+
+        # 2. Seed Workloads (AWIs)
+        workloads = [
+            {
+                "name": "Customer Portal",
+                "description": "Main customer facing portal",
+                "environment": "PROD",
+                "hosting_model": "On-Premise",
+                "ci_ids": [ci_ids["SRV-APPS-01"], ci_ids["SRV-APPS-02"], ci_ids["CUST-DB-01"]],
+                "relationships": []
+            },
+            {
+                "name": "Payment Gateway",
+                "description": "Internal payment processing service",
+                "environment": "PROD",
+                "hosting_model": "On-Premise",
+                "ci_ids": [ci_ids["SRV-DB-01"]],
+                "relationships": []
+            },
+            {
+                "name": "HR Dashboard",
+                "description": "Employee self-service portal",
+                "environment": "PROD",
+                "hosting_model": "SaaS",
+                "ci_ids": [],
+                "relationships": []
+            }
+        ]
+        wl_ids = {}
+        for wl in workloads:
+            wl_ids[wl["name"]] = self.add_workload(wl)
+
+        # 3. Seed Dependencies
+        dependencies = [
+            {
+                "source_workload_id": wl_ids["Customer Portal"],
+                "target_workload_id": wl_ids["Payment Gateway"],
+                "environment": "PROD",
+                "level": "High",
+                "latency_sensitive": True,
+                "type": "dependency"
+            },
+            {
+                "source_workload_id": wl_ids["Customer Portal"],
+                "target_workload_id": wl_ids["HR Dashboard"],
+                "environment": "PROD",
+                "level": "Low",
+                "latency_sensitive": False,
+                "type": "dependency"
+            }
+        ]
+        for dep in dependencies:
+            self.add_dependency(dep)
 
     def _seed_network_scans(self):
         scans = [

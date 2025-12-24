@@ -90,7 +90,7 @@ function renderPrepareOldOverview(container) {
                         <p class="card-text text-muted small">Upload your spreadsheet file or manually input configuration items.</p>
                         <div class="d-flex gap-2">
                             <button class="btn btn-outline-dark btn-sm"><i class="bi bi-download me-1"></i> Template</button>
-                            <button class="btn btn-dark btn-sm" onclick="window.showUploadModal()"><i class="bi bi-paperclip me-1"></i> Upload File</button>
+                            <button class="btn btn-dark btn-sm" onclick="window.showUploadModalOld()"><i class="bi bi-paperclip me-1"></i> Upload File</button>
                             <button class="btn btn-outline-primary btn-sm" onclick="window.setPrepareOldStep('ingest')">View Data</button>
                         </div>
                         <div class="mt-3">
@@ -162,7 +162,7 @@ async function renderPrepareOldIngest(container) {
                 <h4 class="mb-0">Ingest</h4>
             </div>
             <div class="d-flex gap-2">
-                <button class="btn btn-outline-dark btn-sm" onclick="window.showUploadModal()">Upload Files</button>
+                <button class="btn btn-outline-dark btn-sm" onclick="window.showUploadModalOld()">Upload Files</button>
                 <button class="btn btn-outline-dark btn-sm">Download Template</button>
                 <button class="btn btn-primary btn-sm" onclick="window.setPrepareOldStep('map')">Map Fields</button>
             </div>
@@ -481,8 +481,7 @@ window.showUploadModalOld = () => {
         
         if (res.ok) {
             modal.hide();
-            // Note: This relies on renderPrepare from prepare-modernized.js
-            if (window.renderPrepare) {
+            if (window.currentModule === 'prepare') {
                 window.renderPrepare();
             } else {
                 window.renderPrepareOld();
@@ -556,7 +555,7 @@ window.showManualInputModal = async () => {
         if (res.ok) {
             modal.hide();
             alert('CI created successfully!');
-            if (window.renderPrepare) {
+            if (window.currentModule === 'prepare') {
                 window.renderPrepare();
             } else {
                 window.renderPrepareOld();
