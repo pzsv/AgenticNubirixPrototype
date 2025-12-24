@@ -4,7 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dd3a8f81-e856-4b78-92eb-8eb6000a4067" name="Changes" comment="Graph representation of AWIs and dependency links added to Map phase" />
+    <list default="true" id="dd3a8f81-e856-4b78-92eb-8eb6000a4067" name="Changes" comment="Graph mini-maps and controls added to Map">
+      <change afterPath="$PROJECT_DIR$/app/config.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/config.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/test_config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/database.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prototype.db" beforeDir="false" afterPath="$PROJECT_DIR$/prototype.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -77,7 +87,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1766544897662</updated>
-      <workItem from="1766544898713" duration="4460000" />
+      <workItem from="1766544898713" duration="5832000" />
     </task>
     <task id="LOCAL-00001" summary="app.js split between modules and features">
       <option name="closed" value="true" />
@@ -111,7 +121,15 @@
       <option name="project" value="LOCAL" />
       <updated>1766549097808</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Graph mini-maps and controls added to Map">
+      <option name="closed" value="true" />
+      <created>1766549670905</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1766549670905</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -122,9 +140,10 @@
     <MESSAGE value="Old and new Menu sections show correcct versions of Prepare and the rest of the modules" />
     <MESSAGE value="Data Sources in Prepare module reflect all ingestion types and are separated into a new section" />
     <MESSAGE value="Graph representation of AWIs and dependency links added to Map phase" />
-    <option name="LAST_COMMIT_MESSAGE" value="Graph representation of AWIs and dependency links added to Map phase" />
+    <MESSAGE value="Graph mini-maps and controls added to Map" />
+    <option name="LAST_COMMIT_MESSAGE" value="Graph mini-maps and controls added to Map" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/AgenticNubirixPrototype$main.coverage" NAME="main Coverage Results" MODIFIED="1766548982919" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/AgenticNubirixPrototype$main.coverage" NAME="main Coverage Results" MODIFIED="1766551549407" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

@@ -23,6 +23,27 @@ This is a FastAPI-based prototype for a Data Centre Migration application.
 pip install -r requirements.txt
 ```
 
+### Configuration
+
+The application configuration is stored in `config.yaml`. You can configure:
+- **Application Settings**:
+    - `title`: Application title.
+    - `description`: Application description.
+    - `version`: Application version.
+    - `root_url`: The base URL where the application is hosted.
+    - `host`: The interface to bind the server to (e.g., `0.0.0.0`).
+    - `port`: The port to listen on.
+    - `reload`: Enable or disable auto-reload.
+- **Database Settings**:
+    - `url`: Database connection URL (e.g., `sqlite:///./prototype.db`).
+    - `username`: Database username.
+    - `password`: Database password.
+
+Most of these can be overridden by environment variables:
+- `APP_HOST` overrides `app.host`
+- `APP_PORT` overrides `app.port`
+- `APP_RELOAD` overrides `app.reload`
+
 ### Running the Application
 
 ```bash
