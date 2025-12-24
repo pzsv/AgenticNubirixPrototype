@@ -113,16 +113,19 @@ class StandardValue(Base):
     
     field = relationship("DataField", back_populates="standard_values")
 
-class Dataset(Base):
-    __tablename__ = "datasets"
+class DataSource(Base):
+    __tablename__ = "data_sources"
 
     id = Column(String, primary_key=True, index=True)
     name = Column(String)
-    last_uploaded = Column(String)
+    source_type = Column(String) # "Excel", "CSV", "CMDB", "Network Scan", "Manual", etc.
+    data_ingested = Column(String) # e.g., "Server Inventory", "App List"
+    last_sync = Column(String)
     records = Column(Integer)
-    upload_count = Column(Integer)
+    sync_count = Column(Integer)
+    status = Column(String) # "Success", "Syncing", "Failed", "Pending"
     process = Column(Boolean)
-    worksheets = Column(JSON)
+    config = Column(JSON) # for storing source-specific configuration
     rating = Column(String)
 
 class FieldMapping(Base):
@@ -152,3 +155,15 @@ class Runbook(Base):
     name = Column(String)
     workload_id = Column(String, ForeignKey("workloads.id"))
     steps = Column(JSON) # Storing RunbookSteps as JSON for simplicity
+
+class NetworkScan(Base):
+    __tablename__ = "network_scans"
+
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String)
+    target_range = Column(String)
+    status = Column(String) # "Pending", "Running", "Completed", "Failed"
+    start_time = Column(String)
+    end_time = Column(String)
+    discovered_items = Column(Integer, default=0)
+    results = Column(JSON)

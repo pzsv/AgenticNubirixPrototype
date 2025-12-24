@@ -9,6 +9,11 @@ GET http://127.0.0.1:8000/api-status
 Accept: application/json
 
 ###
+# Prepare: Get all Data Sources
+GET http://127.0.0.1:8000/prepare/data-sources
+Accept: application/json
+
+###
 # Prepare: Get all CIs
 GET http://127.0.0.1:8000/prepare/items
 Accept: application/json

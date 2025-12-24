@@ -12,10 +12,40 @@ class DatabaseStorage:
         # Seed only if empty
         if self.db.query(models.DataField).count() == 0:
             self._seed_data_dictionary()
-        if self.db.query(models.Dataset).count() == 0:
-            self._seed_datasets()
+        if self.db.query(models.DataSource).count() == 0:
+            self._seed_data_sources()
         if self.db.query(models.RawDataEntity).count() == 0:
             self._seed_raw_data()
+        if self.db.query(models.NetworkScan).count() == 0:
+            self._seed_network_scans()
+
+    def _seed_network_scans(self):
+        scans = [
+            {
+                "name": "Initial Discovery",
+                "target_range": "10.0.1.0/24",
+                "status": "Completed",
+                "start_time": "2025-12-23 08:00:00",
+                "end_time": "2025-12-23 08:15:00",
+                "discovered_items": 12,
+                "results": [
+                    {"ip": "10.0.1.10", "hostname": "SRV-APPS-01", "type": "server"},
+                    {"ip": "10.0.1.11", "hostname": "SRV-APPS-02", "type": "server"},
+                    {"ip": "10.0.1.50", "hostname": "GW-01", "type": "network_device"}
+                ]
+            },
+            {
+                "name": "DC-2 Scan",
+                "target_range": "10.0.2.0/24",
+                "status": "Failed",
+                "start_time": "2025-12-23 10:00:00",
+                "end_time": "2025-12-23 10:05:00",
+                "discovered_items": 0,
+                "results": []
+            }
+        ]
+        for s in scans:
+            self.add_network_scan(s)
 
     def _seed_raw_data(self):
         # Sample raw data for manual ingestion
@@ -87,38 +117,62 @@ class DatabaseStorage:
                         "rating": fe["rating"]
                     })
 
-    def _seed_datasets(self):
-        # Sample datasets based on screenshots
-        self.add_dataset({
-            "name": "app_ds_2",
-            "last_uploaded": "Nov 14, 2025, 10:49:28 AM",
-            "records": 17,
-            "upload_count": 1,
+    def _seed_data_sources(self):
+        # Sample data sources of various types
+        self.add_data_source({
+            "name": "Server_Inventory_v2",
+            "source_type": "Excel",
+            "data_ingested": "Server Inventory",
+            "last_sync": "10 mins ago",
+            "records": 1245,
+            "sync_count": 2,
+            "status": "Success",
             "process": True,
-            "worksheets": ["Business Unit", "Company", "Group"]
+            "config": {"worksheets": ["Server List"]},
+            "rating": "high"
         })
-        self.add_dataset({
-            "name": "app_inventory_ds",
-            "last_uploaded": "Nov 14, 2025, 10:32:56 AM",
-            "records": 298,
-            "upload_count": 1,
+        self.add_data_source({
+            "name": "ServiceNow_PROD",
+            "source_type": "CMDB",
+            "data_ingested": "Full CI Export",
+            "last_sync": "Just now",
+            "records": 892,
+            "sync_count": 45,
+            "status": "Syncing",
             "process": True,
-            "worksheets": ["Application Package", "Application Software", "Database"]
+            "config": {"api_endpoint": "https://servicenow.prod/api"},
+            "rating": "high"
         })
-        self.add_dataset({
-            "name": "server_inventory_ds",
-            "last_uploaded": "Nov 14, 2025, 10:15:12 AM",
-            "records": 349,
-            "upload_count": 1,
+        self.add_data_source({
+            "name": "Initial Discovery Scan",
+            "source_type": "Network Scan",
+            "data_ingested": "Subnet 10.0.1.0/24",
+            "last_sync": "2 hours ago",
+            "records": 12,
+            "sync_count": 1,
+            "status": "Success",
             "process": True,
-            "worksheets": ["Server List"]
+            "config": {"target_range": "10.0.1.0/24"},
+            "rating": "medium"
+        })
+        self.add_data_source({
+            "name": "Manual Entry",
+            "source_type": "Manual",
+            "data_ingested": "Miscellaneous Assets",
+            "last_sync": "Yesterday",
+            "records": 42,
+            "sync_count": 12,
+            "status": "Success",
+            "process": True,
+            "config": {},
+            "rating": "low"
         })
 
         # Add some sample mappings
         self.add_field_mapping({
             "source_field": "Business Unit Company Name",
-            "data_source": "app_ds_2",
-            "worksheet": "Business Unit",
+            "data_source": "Server_Inventory_v2",
+            "worksheet": "Server List",
             "data_entity": None,
             "target_field": None,
             "status": "Pending",
@@ -126,8 +180,8 @@ class DatabaseStorage:
         })
         self.add_field_mapping({
             "source_field": "Company Business Group Name",
-            "data_source": "app_ds_2",
-            "worksheet": "Company",
+            "data_source": "Server_Inventory_v2",
+            "worksheet": "Server List",
             "data_entity": "Company",
             "target_field": "Company Business Group Name",
             "status": "Resolved",
@@ -463,35 +517,44 @@ class DatabaseStorage:
             return {"id": sv.id, "field_id": sv.field_id, "value": sv.value}
         return None
 
-    def add_dataset(self, ds_data: Dict[str, Any]) -> str:
+    def add_data_source(self, ds_data: Dict[str, Any]) -> str:
         ds_id = ds_data.get("id") or str(uuid.uuid4())
-        db_ds = models.Dataset(
+        db_ds = models.DataSource(
             id=ds_id,
             name=ds_data["name"],
-            last_uploaded=ds_data.get("last_uploaded"),
+            source_type=ds_data.get("source_type", "Excel"),
+            data_ingested=ds_data.get("data_ingested"),
+            last_sync=ds_data.get("last_sync"),
             records=ds_data.get("records", 0),
-            upload_count=ds_data.get("upload_count", 0),
+            sync_count=ds_data.get("sync_count", 0),
+            status=ds_data.get("status", "Pending"),
             process=ds_data.get("process", True),
-            worksheets=ds_data.get("worksheets", []),
+            config=ds_data.get("config", {}),
             rating=ds_data.get("rating")
         )
         self.db.add(db_ds)
         self.db.commit()
         return ds_id
 
-    def get_datasets(self) -> List[Dict[str, Any]]:
-        datasets = self.db.query(models.Dataset).all()
+    def get_data_sources(self) -> List[Dict[str, Any]]:
+        data_sources = self.db.query(models.DataSource).all()
         return [
             {
                 "id": d.id,
                 "name": d.name,
-                "last_uploaded": d.last_uploaded,
+                "source_type": d.source_type,
+                "data_ingested": d.data_ingested,
+                "last_sync": d.last_sync,
+                "last_uploaded": d.last_sync, # Compatibility
                 "records": d.records,
-                "upload_count": d.upload_count,
+                "sync_count": d.sync_count,
+                "upload_count": d.sync_count, # Compatibility
+                "status": d.status,
                 "process": d.process,
-                "worksheets": d.worksheets,
+                "config": d.config,
+                "worksheets": d.config.get("worksheets", []) if d.config else [], # Compatibility
                 "rating": d.rating
-            } for d in datasets
+            } for d in data_sources
         ]
 
     def add_field_mapping(self, mapping_data: Dict[str, Any]) -> str:
@@ -742,5 +805,61 @@ class DatabaseStorage:
                 "rating": f.rating
             } for f in fields
         ]
+
+    def add_network_scan(self, scan_data: Dict[str, Any]) -> str:
+        scan_id = scan_data.get("id") or str(uuid.uuid4())
+        db_scan = models.NetworkScan(
+            id=scan_id,
+            name=scan_data["name"],
+            target_range=scan_data["target_range"],
+            status=scan_data.get("status", "Pending"),
+            start_time=scan_data.get("start_time"),
+            end_time=scan_data.get("end_time"),
+            discovered_items=scan_data.get("discovered_items", 0),
+            results=scan_data.get("results", [])
+        )
+        self.db.add(db_scan)
+        self.db.commit()
+        return scan_id
+
+    def get_network_scans(self) -> List[Dict[str, Any]]:
+        scans = self.db.query(models.NetworkScan).all()
+        return [
+            {
+                "id": s.id,
+                "name": s.name,
+                "target_range": s.target_range,
+                "status": s.status,
+                "start_time": s.start_time,
+                "end_time": s.end_time,
+                "discovered_items": s.discovered_items,
+                "results": s.results
+            } for s in scans
+        ]
+
+    def get_network_scan_by_id(self, scan_id: str) -> Optional[Dict[str, Any]]:
+        s = self.db.query(models.NetworkScan).filter(models.NetworkScan.id == scan_id).first()
+        if s:
+            return {
+                "id": s.id,
+                "name": s.name,
+                "target_range": s.target_range,
+                "status": s.status,
+                "start_time": s.start_time,
+                "end_time": s.end_time,
+                "discovered_items": s.discovered_items,
+                "results": s.results
+            }
+        return None
+
+    def update_network_scan(self, scan_id: str, updates: Dict[str, Any]) -> bool:
+        db_scan = self.db.query(models.NetworkScan).filter(models.NetworkScan.id == scan_id).first()
+        if not db_scan:
+            return False
+        for key, value in updates.items():
+            if hasattr(db_scan, key):
+                setattr(db_scan, key, value)
+        self.db.commit()
+        return True
 
 storage = DatabaseStorage()

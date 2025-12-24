@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form
-from app.schemas.prepare import ConfigurationItem, ConfigurationItemCreate, CIType
+from app.schemas.prepare import ConfigurationItem, ConfigurationItemCreate, CIType, NetworkScan, NetworkScanCreate
 from app.services.storage import storage
 import pandas as pd
 import io
@@ -51,9 +51,14 @@ async def create_ci(ci: ConfigurationItemCreate):
 async def list_cis():
     return storage.get_cis()
 
+@router.get("/data-sources")
+async def list_data_sources():
+    return storage.get_data_sources()
+
 @router.get("/datasets")
 async def list_datasets():
-    return storage.get_datasets()
+    # Keep for backward compatibility, but return generalized data sources
+    return storage.get_data_sources()
 
 @router.get("/field-mappings")
 async def list_field_mappings():
@@ -82,14 +87,17 @@ async def upload_dataset(
         else:
             raise HTTPException(status_code=400, detail="Invalid file format")
         
-        # Add dataset to storage
-        ds_id = storage.add_dataset({
+        # Add data source to storage
+        ds_id = storage.add_data_source({
             "name": name,
-            "last_uploaded": datetime.now().strftime("%b %d, %Y, %I:%M:%S %p"),
+            "source_type": "Excel" if file.filename.endswith(('.xls', '.xlsx')) else "CSV",
+            "data_ingested": worksheet,
+            "last_sync": datetime.now().strftime("%b %d, %Y, %I:%M:%S %p"),
             "records": len(df),
-            "upload_count": 1,
+            "sync_count": 1,
+            "status": "Success",
             "process": True,
-            "worksheets": [worksheet],
+            "config": {"worksheets": [worksheet]},
             "rating": rating
         })
 
@@ -121,9 +129,65 @@ async def upload_dataset(
                     "rating": rating
                 })
 
-        return {"message": f"Successfully uploaded {name} with {len(df)} records", "dataset_id": ds_id}
+        return {"message": f"Successfully uploaded {name} with {len(df)} records", "source_id": ds_id}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/scans", response_model=list[NetworkScan])
+async def list_scans():
+    return storage.get_network_scans()
+
+@router.post("/scans", response_model=NetworkScan)
+async def create_scan(scan: NetworkScanCreate):
+    scan_id = storage.add_network_scan(scan.model_dump())
+    return storage.get_network_scan_by_id(scan_id)
+
+@router.post("/scans/{scan_id}/run")
+async def run_scan(scan_id: str):
+    scan = storage.get_network_scan_by_id(scan_id)
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    
+    storage.update_network_scan(scan_id, {
+        "status": "Running",
+        "start_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+    
+    # Mock scan execution
+    results = [
+        {"ip": "192.168.1.10", "hostname": "WEB-SRV-01", "type": "server"},
+        {"ip": "192.168.1.11", "hostname": "WEB-SRV-02", "type": "server"},
+        {"ip": "192.168.1.20", "hostname": "DB-SRV-01", "type": "database"},
+    ]
+    
+    storage.update_network_scan(scan_id, {
+        "status": "Completed",
+        "end_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "discovered_items": len(results),
+        "results": results
+    })
+    
+    # Also create Raw Data Entities for the discovered items
+    for item in results:
+        raw_entity_id = storage.add_raw_data_entity({
+            "source_type": "network_scan",
+            "user": "system",
+            "data_entity_name": item["type"]
+        })
+        storage.add_raw_data_entity_field({
+            "raw_data_entity_id": raw_entity_id,
+            "field_name": "hostname",
+            "field_value": item["hostname"],
+            "rating": "high"
+        })
+        storage.add_raw_data_entity_field({
+            "raw_data_entity_id": raw_entity_id,
+            "field_name": "ip",
+            "field_value": item["ip"],
+            "rating": "high"
+        })
+
+    return storage.get_network_scan_by_id(scan_id)
 
 @router.post("/ingest")
 async def ingest_cis(file: UploadFile = File(...)):
