@@ -53,6 +53,12 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'data-dictionary':
                 if (window.renderDataDictionary) await window.renderDataDictionary();
                 break;
+            case 'environments':
+                if (window.renderEnvironments) await window.renderEnvironments();
+                break;
+            case 'move-principles':
+                if (window.renderMovePrinciples) await window.renderMovePrinciples();
+                break;
             case 'data-entities':
                 if (window.renderDataEntities) await window.renderDataEntities();
                 break;

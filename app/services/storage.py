@@ -18,6 +18,10 @@ class DatabaseStorage:
                 self._seed_raw_data(db)
             if db.query(models.NetworkScan).count() == 0:
                 self._seed_network_scans(db)
+            if db.query(models.Environment).count() == 0:
+                self._seed_environments(db)
+            if db.query(models.MovePrinciple).count() == 0:
+                self._seed_move_principles(db)
             if db.query(models.Workload).count() == 0:
                 self._seed_cis_workloads_dependencies(db)
             else:
@@ -284,7 +288,8 @@ class DatabaseStorage:
             "Web": ["Web Server Type", "VHost Name"],
             "Network Device": ["Device Type", "Firmware Version"],
             "Storage": ["Storage Type", "Capacity", "IOPS"],
-            "Environment": ["Environment Name", "Location", "Tier"]
+            "Environment": ["Environment Name", "Location", "Tier"],
+            "Migration": ["Move Principle"]
         }
         
         for entity, fields in entities.items():
@@ -295,11 +300,15 @@ class DatabaseStorage:
                 ef_id = self.add_data_entity_field({"name": field_name, "entity_id": entity_id, "anchor": field_name.lower().replace(" ", "_")}, db)
                 if first_field_id is None:
                     first_field_id = ef_id
-            
-            if first_field_id:
-                self.update_data_entity(entity_id, {"key_field_id": first_field_id}, db)
                 
-                if field_name == "Database Technology":
+                # Seed specific values
+                if field_name == "Environment Name":
+                    for val in ["PROD", "TEST", "DEV", "STAGE"]:
+                        self.add_standard_value({"field_id": field_id, "value": val}, db)
+                elif field_name == "Move Principle":
+                    for val in ["Rehost", "Relocate", "Replatform", "Refactor", "Repurchase", "Retire", "Retain"]:
+                        self.add_standard_value({"field_id": field_id, "value": val}, db)
+                elif field_name == "Database Technology":
                     for val in ["Oracle", "PostgreSQL", "MySQL", "SQL Server", "MongoDB"]:
                         self.add_standard_value({"field_id": field_id, "value": val}, db)
                 elif field_name == "Database Type":
@@ -314,6 +323,9 @@ class DatabaseStorage:
                 elif field_name == "Web Server Type":
                     for val in ["Apache", "Nginx", "IIS", "Tomcat"]:
                         self.add_standard_value({"field_id": field_id, "value": val}, db)
+            
+            if first_field_id:
+                self.update_data_entity(entity_id, {"key_field_id": first_field_id}, db)
 
     def add_ci(self, ci_data: Dict[str, Any], db: Optional[Session] = None) -> str:
         ci_id = ci_data.get("id") or str(uuid.uuid4())
@@ -1065,5 +1077,117 @@ class DatabaseStorage:
                     setattr(db_scan, key, value)
             db.commit()
             return True
+
+    def _seed_environments(self, db: Session):
+        environments = [
+            {"name": "PROD", "description": "Production environment"},
+            {"name": "STAGE", "description": "Staging environment"},
+            {"name": "UAT", "description": "User Acceptance Testing"},
+            {"name": "DEV", "description": "Development environment"},
+            {"name": "DR", "description": "Disaster Recovery"}
+        ]
+        for env in environments:
+            self.add_environment(env, db)
+
+    def _seed_move_principles(self, db: Session):
+        principles = [
+            {"name": "Rehost", "description": "Moving an application to the cloud as-is without any changes (Lift & Shift)."},
+            {"name": "Relocate", "description": "Moving infrastructure to the cloud without functional changes or new hardware."},
+            {"name": "Replatform", "description": "Moving an application to the cloud with minor optimizations (Lift, Tinker & Shift)."},
+            {"name": "Refactor", "description": "Reimagining how an application is architected and developed using cloud-native features."},
+            {"name": "Repurchase", "description": "Moving to a different product, typically a SaaS platform."},
+            {"name": "Retire", "description": "Decommissioning an application that is no longer needed."},
+            {"name": "Retain", "description": "Keeping an application in its current environment (Do nothing for now)."}
+        ]
+        for mp in principles:
+            self.add_move_principle(mp, db)
+
+    # Environment CRUD
+    def add_environment(self, env_data: Dict[str, Any], db: Optional[Session] = None):
+        if db is None:
+            with SessionLocal() as db:
+                return self._add_environment_impl(env_data, db)
+        return self._add_environment_impl(env_data, db)
+
+    def _add_environment_impl(self, env_data: Dict[str, Any], db: Session):
+        env_id = env_data.get("id", str(uuid.uuid4()))
+        db_env = models.Environment(
+            id=env_id,
+            name=env_data["name"],
+            description=env_data.get("description", "")
+        )
+        db.add(db_env)
+        db.commit()
+        return env_id
+
+    def get_environments(self) -> List[Dict[str, Any]]:
+        with SessionLocal() as db:
+            envs = db.query(models.Environment).all()
+            return [{"id": e.id, "name": e.name, "description": e.description} for e in envs]
+
+    def update_environment(self, env_id: str, updates: Dict[str, Any]) -> bool:
+        with SessionLocal() as db:
+            db_env = db.query(models.Environment).filter(models.Environment.id == env_id).first()
+            if db_env:
+                if "name" in updates:
+                    db_env.name = updates["name"]
+                if "description" in updates:
+                    db_env.description = updates["description"]
+                db.commit()
+                return True
+            return False
+
+    def delete_environment(self, env_id: str) -> bool:
+        with SessionLocal() as db:
+            db_env = db.query(models.Environment).filter(models.Environment.id == env_id).first()
+            if db_env:
+                db.delete(db_env)
+                db.commit()
+                return True
+            return False
+
+    # Move Principle CRUD
+    def add_move_principle(self, principle_data: Dict[str, Any], db: Optional[Session] = None):
+        if db is None:
+            with SessionLocal() as db:
+                return self._add_move_principle_impl(principle_data, db)
+        return self._add_move_principle_impl(principle_data, db)
+
+    def _add_move_principle_impl(self, principle_data: Dict[str, Any], db: Session):
+        principle_id = principle_data.get("id", str(uuid.uuid4()))
+        db_principle = models.MovePrinciple(
+            id=principle_id,
+            name=principle_data["name"],
+            description=principle_data.get("description", "")
+        )
+        db.add(db_principle)
+        db.commit()
+        return principle_id
+
+    def get_move_principles(self) -> List[Dict[str, Any]]:
+        with SessionLocal() as db:
+            principles = db.query(models.MovePrinciple).all()
+            return [{"id": p.id, "name": p.name, "description": p.description} for p in principles]
+
+    def update_move_principle(self, principle_id: str, updates: Dict[str, Any]) -> bool:
+        with SessionLocal() as db:
+            db_principle = db.query(models.MovePrinciple).filter(models.MovePrinciple.id == principle_id).first()
+            if db_principle:
+                if "name" in updates:
+                    db_principle.name = updates["name"]
+                if "description" in updates:
+                    db_principle.description = updates["description"]
+                db.commit()
+                return True
+            return False
+
+    def delete_move_principle(self, principle_id: str) -> bool:
+        with SessionLocal() as db:
+            db_principle = db.query(models.MovePrinciple).filter(models.MovePrinciple.id == principle_id).first()
+            if db_principle:
+                db.delete(db_principle)
+                db.commit()
+                return True
+            return False
 
 storage = DatabaseStorage()

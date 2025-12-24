@@ -16,6 +16,27 @@ window.setMapStep = (step) => {
 
 async function renderMap() {
     const contentArea = document.getElementById('main-area');
+    
+    // Fetch environments and move principles
+    let environments = ['PROD', 'TEST', 'DEV', 'STAGE'];
+    let movePrinciples = ['Rehost', 'Relocate', 'Replatform', 'Refactor', 'Repurchase', 'Retire', 'Retain'];
+    
+    try {
+        const envResponse = await fetch('/environments/');
+        const envs = await envResponse.json();
+        if (envs && envs.length > 0) {
+            environments = envs.map(e => e.name);
+        }
+
+        const moveResponse = await fetch('/move-principles/');
+        const principles = await moveResponse.json();
+        if (principles && principles.length > 0) {
+            movePrinciples = principles.map(p => p.name);
+        }
+    } catch (e) {
+        console.error("Error fetching configuration:", e);
+    }
+
     const html = `
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">Map</h2>
@@ -72,15 +93,14 @@ async function renderMap() {
                             <div class="mb-3">
                                 <label class="form-label text-muted small text-uppercase">Environment</label>
                                 <select class="form-select" name="environment">
-                                    <option value="PROD">PROD</option>
-                                    <option value="UAT">UAT</option>
-                                    <option value="DEV">DEV</option>
-                                    <option value="DR">DR</option>
+                                    ${environments.map(env => `<option value="${env}">${env}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label text-muted small text-uppercase">Hosting Model</label>
-                                <input type="text" class="form-control" name="hosting_model" value="On-Premise">
+                                <label class="form-label text-muted small text-uppercase">Move Principle</label>
+                                <select class="form-select" name="hosting_model">
+                                    ${movePrinciples.map(mp => `<option value="${mp}">${mp}</option>`).join('')}
+                                </select>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label text-muted small text-uppercase">Description</label>
@@ -115,7 +135,9 @@ async function renderMap() {
                             </div>
                             <div class="mb-3">
                                 <label class="form-label text-muted small text-uppercase">Environment</label>
-                                <input type="text" class="form-control" name="environment" value="PROD">
+                                <select class="form-select" name="environment">
+                                    ${environments.map(env => `<option value="${env}">${env}</option>`).join('')}
+                                </select>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label text-muted small text-uppercase">Dependency Level</label>
@@ -321,7 +343,7 @@ async function renderMapAWIs(container) {
                         <tr>
                             <th class="ps-4">AWI Name</th>
                             <th>Environment</th>
-                            <th>Hosting Model</th>
+                            <th>Move Principle</th>
                             <th>Asset Count</th>
                             <th>Description</th>
                             <th class="text-end pe-4">Actions</th>

@@ -22,6 +22,14 @@ class Config(BaseModel):
     database: DatabaseConfig
 
 def load_config(config_path: str = "config.yaml") -> Config:
+    # If the path is not absolute, try to find it relative to the project root
+    if not os.path.isabs(config_path) and not os.path.exists(config_path):
+        current_file_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_file_dir)
+        config_path_in_root = os.path.join(project_root, config_path)
+        if os.path.exists(config_path_in_root):
+            config_path = config_path_in_root
+
     if not os.path.exists(config_path):
         # Provide some defaults if file doesn't exist, or raise a better error
         raise FileNotFoundError(f"Configuration file not found: {config_path}")

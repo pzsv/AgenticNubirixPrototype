@@ -149,6 +149,18 @@ class Wave(Base):
     
     workloads = relationship("Workload", secondary=wave_workload)
 
+class Environment(Base):
+    __tablename__ = "environments"
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String, index=True)
+    description = Column(String)
+
+class MovePrinciple(Base):
+    __tablename__ = "move_principles"
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String, index=True)
+    description = Column(String)
+
 class Runbook(Base):
     __tablename__ = "runbooks"
     id = Column(String, primary_key=True, index=True)
