@@ -68,6 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'data-entities':
                 if (window.renderDataEntities) await window.renderDataEntities();
                 break;
+            case 'score-card':
+                if (window.modules && window.modules['score-card']) await window.modules['score-card']();
+                break;
             default:
                 contentArea.innerHTML = '<h2>Module not found</h2>';
         }
