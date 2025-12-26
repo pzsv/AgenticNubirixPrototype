@@ -1,9 +1,11 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from app.schemas.workload import Workload, WorkloadCreate, Dependency
+from app.schemas.mapping import S2TMapping, S2TMappingCreate, MoveDependencyGroup, MoveDependencyGroupCreate
 from app.services.storage import storage
 import pandas as pd
 import io
 import json
+from typing import List
 
 router = APIRouter(prefix="/map", tags=["Map"])
 
@@ -24,6 +26,51 @@ async def create_dependency(dependency: Dependency):
 @router.get("/dependencies", response_model=list[Dependency])
 async def list_dependencies():
     return storage.get_dependencies()
+
+# S2T Mapping Endpoints
+@router.get("/s2t", response_model=List[S2TMapping])
+async def list_s2t_mappings():
+    return storage.get_s2t_mappings()
+
+@router.post("/s2t", response_model=str)
+async def create_s2t_mapping(mapping: S2TMappingCreate):
+    return storage.add_s2t_mapping(mapping.model_dump())
+
+@router.get("/s2t/{workload_id}", response_model=S2TMapping)
+async def get_s2t_mapping(workload_id: str):
+    mapping = storage.get_s2t_mapping_by_workload(workload_id)
+    if not mapping:
+        # Create a default one if not exists
+        mapping_id = storage.add_s2t_mapping({"workload_id": workload_id})
+        mapping = storage.get_s2t_mapping_by_workload(workload_id)
+    return mapping
+
+@router.put("/s2t/{mapping_id}")
+async def update_s2t_mapping(mapping_id: str, updates: dict):
+    if storage.update_s2t_mapping(mapping_id, updates):
+        return {"message": "Mapping updated"}
+    raise HTTPException(status_code=404, detail="Mapping not found")
+
+# MDG Endpoints
+@router.get("/mdgs", response_model=List[MoveDependencyGroup])
+async def list_mdgs():
+    return storage.get_mdgs()
+
+@router.post("/mdgs", response_model=str)
+async def create_mdg(mdg: MoveDependencyGroupCreate):
+    return storage.add_mdg(mdg.model_dump())
+
+@router.put("/mdgs/{mdg_id}")
+async def update_mdg(mdg_id: str, updates: dict):
+    if storage.update_mdg(mdg_id, updates):
+        return {"message": "MDG updated"}
+    raise HTTPException(status_code=404, detail="MDG not found")
+
+@router.delete("/mdgs/{mdg_id}")
+async def delete_mdg(mdg_id: str):
+    if storage.delete_mdg(mdg_id):
+        return {"message": "MDG deleted"}
+    raise HTTPException(status_code=404, detail="MDG not found")
 
 @router.post("/ingest/workloads")
 async def ingest_workloads(file: UploadFile = File(...)):

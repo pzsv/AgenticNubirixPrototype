@@ -1,4 +1,7 @@
 // --- Module: Move ---
+(function() {
+    if (typeof window === 'undefined') return;
+
 async function renderMove() {
     const contentArea = document.getElementById('main-area');
     const [workloadsRes, runbooksRes] = await Promise.all([
@@ -92,3 +95,4 @@ async function renderMove() {
 }
 
 window.renderMove = renderMove;
+})();

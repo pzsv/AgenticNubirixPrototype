@@ -11,6 +11,7 @@ class MigrationWaveBase(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     workload_ids: List[str] = Field(default_factory=list)
+    mdg_ids: List[str] = Field(default_factory=list)
 
 class MigrationWaveCreate(MigrationWaveBase):
     pass

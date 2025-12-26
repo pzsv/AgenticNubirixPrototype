@@ -1,4 +1,7 @@
 // --- Module: Map ---
+(function() {
+    if (typeof window === 'undefined') return;
+
 let mapState = {
     currentStep: 'awis',
     viewType: 'table' // 'table' or 'graph'
@@ -43,11 +46,19 @@ async function renderMap() {
             <div class="d-flex align-items-center gap-3">
                 <div class="stepper d-flex align-items-center">
                     <div class="step ${mapState.currentStep === 'awis' ? 'active' : ''}" onclick="window.setMapStep('awis')">
-                        AWI
+                        1) AWIs
                     </div>
                     <div class="step-line"></div>
                     <div class="step ${mapState.currentStep === 'dependency-links' ? 'active' : ''}" onclick="window.setMapStep('dependency-links')">
-                        Dependency Links
+                        2) Dependency Links
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step ${mapState.currentStep === 's2ts' ? 'active' : ''}" onclick="window.setMapStep('s2ts')">
+                        3) S2Ts
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step ${mapState.currentStep === 'mdgs' ? 'active' : ''}" onclick="window.setMapStep('mdgs')">
+                        4) MDGs
                     </div>
                 </div>
 
@@ -70,6 +81,7 @@ async function renderMap() {
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item py-2" href="#" onclick="window.showAddAWIModal()"><i class="bi bi-plus-circle me-2"></i> Application Workload Instance (Manual)</a></li>
                         <li><a class="dropdown-item py-2" href="#" onclick="window.showAddDependencyModal()"><i class="bi bi-plus-circle me-2"></i> Dependency Link (Manual)</a></li>
+                        <li><a class="dropdown-item py-2" href="#" onclick="window.showAddMDGModal()"><i class="bi bi-plus-circle me-2"></i> Move Dependency Group (Manual)</a></li>
                     </ul>
                 </div>
             </div>
@@ -215,6 +227,88 @@ async function renderMap() {
                 </div>
             </div>
         </div>
+
+        <div class="modal fade" id="addMDGModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header border-bottom-0 pt-4 px-4">
+                        <h5 class="modal-title fw-bold">Create Move Dependency Group (MDG)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body px-4">
+                        <form id="add-mdg-form">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small text-uppercase">MDG Name</label>
+                                <input type="text" class="form-control" name="name" placeholder="e.g. Core Banking Batch" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small text-uppercase">Description</label>
+                                <textarea class="form-control" name="description" rows="2"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small text-uppercase">Include AWIs</label>
+                                <div id="mdg-awi-list" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                    <!-- Workloads will be listed here with checkboxes -->
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer border-top-0 pb-4 px-4">
+                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" form="add-mdg-form" class="btn btn-primary px-4">Create MDG</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="editS2TModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header border-bottom-0 pt-4 px-4">
+                        <h5 class="modal-title fw-bold">Source-to-Target Mapping: <span id="s2t-awi-name"></span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body px-4">
+                        <form id="edit-s2t-form">
+                            <input type="hidden" name="mapping_id" id="s2t-mapping-id">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted small text-uppercase">Target Move Principle</label>
+                                    <select class="form-select" name="move_principle_id" id="s2t-move-principle">
+                                        ${movePrinciples.map(mp => `<option value="${mp}">${mp}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted small text-uppercase">Target Environment</label>
+                                    <select class="form-select" name="target_environment_id" id="s2t-target-env">
+                                        ${environments.map(env => `<option value="${env}">${env}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small text-uppercase">Target Location / Cloud</label>
+                                <input type="text" class="form-control" name="target_location" id="s2t-target-location" placeholder="e.g. AWS Ireland">
+                            </div>
+                            
+                            <hr class="my-4">
+                            <h6 class="fw-bold mb-3">Score Card Assessment</h6>
+                            <div id="s2t-score-card-factors">
+                                <!-- Factors will be loaded here -->
+                            </div>
+                            
+                            <div class="bg-light p-3 rounded mt-3 d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">Total Decision Score:</span>
+                                <span id="s2t-total-score" class="fs-4 fw-bold text-primary">0</span>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer border-top-0 pb-4 px-4">
+                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-dark px-4" onclick="window.saveS2TMapping()">Save Mapping</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
     
     contentArea.innerHTML = html;
@@ -286,6 +380,25 @@ async function renderMap() {
             }
         };
     }
+
+    const addMDGForm = document.getElementById('add-mdg-form');
+    if (addMDGForm) {
+        addMDGForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            data.workload_ids = Array.from(formData.getAll('workload_ids'));
+            const res = await fetch('/map/mdgs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('addMDGModal')).hide();
+                renderMap();
+            }
+        };
+    }
 }
 
 window.showAddAWIModal = () => {
@@ -328,7 +441,91 @@ async function renderMapStep() {
         await renderMapAWIs(stepArea);
     } else if (mapState.currentStep === 'dependency-links') {
         await renderMapDependencyLinks(stepArea);
+    } else if (mapState.currentStep === 's2ts') {
+        await renderMapS2Ts(stepArea);
+    } else if (mapState.currentStep === 'mdgs') {
+        await renderMapMDGs(stepArea);
     }
+}
+
+async function renderMapS2Ts(container) {
+    const workloadsRes = await fetch('/map/workloads');
+    const workloads = await workloadsRes.json();
+    const s2tRes = await fetch('/map/s2t');
+    const s2ts = await s2tRes.json();
+    
+    const s2tMap = Object.fromEntries(s2ts.map(s => [s.workload_id, s]));
+
+    container.innerHTML = `
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">AWI Name</th>
+                            <th>Environment</th>
+                            <th>Target Principle</th>
+                            <th>Target Location</th>
+                            <th>Total Score</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${workloads.map(w => {
+                            const s2t = s2tMap[w.id] || { status: 'Not Started', total_score: 0 };
+                            return `
+                                <tr>
+                                    <td class="ps-4 fw-bold">${w.name}</td>
+                                    <td><span class="badge bg-light text-dark border">${w.environment}</span></td>
+                                    <td>${s2t.move_principle_id || '-'}</td>
+                                    <td>${s2t.target_location || '-'}</td>
+                                    <td><span class="fw-bold ${s2t.total_score > 0 ? 'text-primary' : 'text-muted'}">${s2t.total_score}</span></td>
+                                    <td><span class="badge ${s2t.status === 'Completed' ? 'bg-success' : 'bg-warning text-dark'}">${s2t.status}</span></td>
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-sm btn-dark" onclick="window.showEditS2TModal('${w.id}', '${w.name}')">
+                                            <i class="bi bi-pencil-square me-1"></i> Map to Target
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+async function renderMapMDGs(container) {
+    const mdgRes = await fetch('/map/mdgs');
+    const mdgs = await mdgRes.json();
+    
+    container.innerHTML = `
+        <div class="row g-4">
+            ${mdgs.map(m => `
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title fw-bold mb-0">${m.name}</h5>
+                                <span class="badge bg-primary">${m.workload_ids ? m.workload_ids.length : 0} AWIs</span>
+                            </div>
+                            <p class="text-muted small mb-3">${m.description || 'No description'}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="small">
+                                    <span class="text-muted">Status:</span> 
+                                    <span class="fw-medium">${m.status}</span>
+                                </div>
+                                <button class="btn btn-sm btn-outline-dark" onclick="window.editMDG('${m.id}')">Edit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+            ${mdgs.length === 0 ? '<div class="col-12 text-center py-5 text-muted">No MDGs defined. Create one to group related AWIs.</div>' : ''}
+        </div>
+    `;
 }
 
 async function renderMapAWIs(container) {
@@ -415,6 +612,108 @@ async function renderMapDependencyLinks(container) {
 window.viewAWIGraph = (awiId) => {
     mapState.viewType = 'graph';
     renderMap();
+};
+
+window.showAddMDGModal = async () => {
+    const res = await fetch('/map/workloads');
+    const workloads = await res.json();
+    
+    const listArea = document.getElementById('mdg-awi-list');
+    if (listArea) {
+        listArea.innerHTML = workloads.map(w => `
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="${w.id}" id="mdg-awi-${w.id}" name="workload_ids">
+                <label class="form-check-label small" for="mdg-awi-${w.id}">
+                    ${w.name} <span class="text-muted">(${w.environment})</span>
+                </label>
+            </div>
+        `).join('');
+    }
+    
+    new bootstrap.Modal(document.getElementById('addMDGModal')).show();
+};
+
+window.showEditS2TModal = async (awiId, awiName) => {
+    document.getElementById('s2t-awi-name').innerText = awiName;
+    
+    const res = await fetch(`/map/s2t/${awiId}`);
+    const mapping = await res.json();
+    
+    document.getElementById('s2t-mapping-id').value = mapping.id;
+    document.getElementById('s2t-move-principle').value = mapping.move_principle_id || 'Rehost';
+    document.getElementById('s2t-target-env').value = mapping.target_environment_id || 'PROD';
+    document.getElementById('s2t-target-location').value = mapping.target_location || '';
+    
+    // Load score card factors
+    const factorsRes = await fetch('/score-card/factors');
+    const factors = await factorsRes.json();
+    
+    const factorsArea = document.getElementById('s2t-score-card-factors');
+    if (factorsArea) {
+        factorsArea.innerHTML = factors.map(f => `
+            <div class="mb-3">
+                <label class="form-label small text-muted text-uppercase mb-1">${f.name}</label>
+                <select class="form-select form-select-sm score-card-input" data-factor-id="${f.id}" data-weight="${f.weight}" onchange="window.calculateS2TScore()">
+                    <option value="">-- Select --</option>
+                    ${f.options.map(o => `
+                        <option value="${o.id}" data-score="${o.score}" ${mapping.score_card_results[f.id] === o.id ? 'selected' : ''}>${o.name} (Score: ${o.score})</option>
+                    `).join('')}
+                </select>
+            </div>
+        `).join('');
+    }
+    
+    window.calculateS2TScore();
+    new bootstrap.Modal(document.getElementById('editS2TModal')).show();
+};
+
+window.calculateS2TScore = () => {
+    let total = 0;
+    document.querySelectorAll('.score-card-input').forEach(select => {
+        const option = select.selectedOptions[0];
+        if (option && option.value) {
+            const score = parseInt(option.getAttribute('data-score'));
+            const weight = parseInt(select.getAttribute('data-weight'));
+            total += score * weight;
+        }
+    });
+    const totalEl = document.getElementById('s2t-total-score');
+    if (totalEl) totalEl.innerText = total;
+};
+
+window.saveS2TMapping = async () => {
+    const mappingId = document.getElementById('s2t-mapping-id').value;
+    const results = {};
+    document.querySelectorAll('.score-card-input').forEach(select => {
+        if (select.value) {
+            results[select.getAttribute('data-factor-id')] = select.value;
+        }
+    });
+    
+    const updates = {
+        move_principle_id: document.getElementById('s2t-move-principle').value,
+        target_environment_id: document.getElementById('s2t-target-env').value,
+        target_location: document.getElementById('s2t-target-location').value,
+        score_card_results: results,
+        total_score: parseInt(document.getElementById('s2t-total-score').innerText),
+        status: 'Completed'
+    };
+    
+    const res = await fetch(`/map/s2t/${mappingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+    });
+    
+    if (res.ok) {
+        bootstrap.Modal.getInstance(document.getElementById('editS2TModal')).hide();
+        renderMap();
+    }
+};
+
+window.editMDG = (id) => {
+    console.log("Edit MDG", id);
+    // For prototype, we just log it or we could implement another modal
 };
 
 async function renderMapGraph(container) {
@@ -714,3 +1013,4 @@ function initGraphNavigator(mainCy, elements) {
     updateNavPositions();
     updateOverlay();
 }
+})();

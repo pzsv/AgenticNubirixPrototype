@@ -18,6 +18,22 @@ wave_workload = Table(
     Column("workload_id", String, ForeignKey("workloads.id")),
 )
 
+# Many-to-many relationship table for Wave and MDG
+wave_mdg = Table(
+    "wave_mdg",
+    Base.metadata,
+    Column("wave_id", String, ForeignKey("waves.id")),
+    Column("mdg_id", String, ForeignKey("move_dependency_groups.id")),
+)
+
+# Many-to-many relationship table for MDG and Workload
+mdg_workload = Table(
+    "mdg_workload",
+    Base.metadata,
+    Column("mdg_id", String, ForeignKey("move_dependency_groups.id")),
+    Column("workload_id", String, ForeignKey("workloads.id")),
+)
+
 class ConfigurationItem(Base):
     __tablename__ = "configuration_items"
 
@@ -90,6 +106,7 @@ class DiscoveredDataEntity(Base):
     user = Column(String) # user id or name
     data_entity_name = Column(String)
     data_source_id = Column(String, ForeignKey("data_sources.id"), nullable=True)
+    status = Column(String, default="Ingested") # Ingested, Standardised, Normalised, Aggregated, Published
 
     fields = relationship("DiscoveredDataField", back_populates="entity", cascade="all, delete-orphan")
 
@@ -150,6 +167,7 @@ class Wave(Base):
     end_date = Column(Date)
     
     workloads = relationship("Workload", secondary=wave_workload)
+    mdgs = relationship("MoveDependencyGroup", secondary=wave_mdg)
 
 class Environment(Base):
     __tablename__ = "environments"
@@ -181,3 +199,43 @@ class NetworkScan(Base):
     end_time = Column(String)
     discovered_items = Column(Integer, default=0)
     results = Column(JSON)
+
+class ScoreCardFactor(Base):
+    __tablename__ = "score_card_factors"
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String)
+    weight = Column(Integer, default=1)
+    description = Column(String)
+    
+    options = relationship("ScoreCardOption", back_populates="factor", cascade="all, delete-orphan")
+
+class ScoreCardOption(Base):
+    __tablename__ = "score_card_options"
+    id = Column(String, primary_key=True, index=True)
+    factor_id = Column(String, ForeignKey("score_card_factors.id"))
+    name = Column(String)
+    score = Column(Integer)
+    
+    factor = relationship("ScoreCardFactor", back_populates="options")
+
+class S2TMapping(Base):
+    __tablename__ = "s2t_mappings"
+    id = Column(String, primary_key=True, index=True)
+    workload_id = Column(String, ForeignKey("workloads.id"))
+    move_principle_id = Column(String, ForeignKey("move_principles.id"))
+    target_environment_id = Column(String, ForeignKey("environments.id"))
+    target_location = Column(String)
+    score_card_results = Column(JSON) # {factor_id: option_id}
+    total_score = Column(Integer)
+    status = Column(String)
+
+class MoveDependencyGroup(Base):
+    __tablename__ = "move_dependency_groups"
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String)
+    description = Column(String)
+    score_card_results = Column(JSON)
+    total_score = Column(Integer)
+    status = Column(String)
+    
+    workloads = relationship("Workload", secondary=mdg_workload)

@@ -1,42 +1,55 @@
 // --- Module: Plan ---
+(function() {
+    if (typeof window === 'undefined') return;
+
 async function renderPlan() {
     const contentArea = document.getElementById('main-area');
-    const [workloadsRes, wavesRes] = await Promise.all([
+    const [workloadsRes, wavesRes, mdgsRes] = await Promise.all([
         fetch('/map/workloads'),
-        fetch('/plan/waves')
+        fetch('/plan/waves'),
+        fetch('/map/mdgs')
     ]);
     const workloads = await workloadsRes.json();
     const waves = await wavesRes.json();
+    const mdgs = await mdgsRes.json();
     
     let html = `
         <h3>3. Plan: Migration Waves</h3>
         <div class="row mb-4">
             <div class="col-md-6">
-                <div class="card">
+                <div class="card shadow-sm border-0">
                     <div class="card-body">
-                        <h5 class="card-title">Create Migration Wave</h5>
+                        <h5 class="card-title fw-bold mb-3">Create Migration Wave</h5>
                         <form id="create-wave-form">
                             <div class="mb-3">
-                                <label class="form-label">Wave Name</label>
+                                <label class="form-label text-muted small text-uppercase">Wave Name</label>
                                 <input type="text" class="form-control" name="name" required>
                             </div>
                             <div class="row mb-3">
                                 <div class="col">
-                                    <label class="form-label">Start Date</label>
+                                    <label class="form-label text-muted small text-uppercase">Start Date</label>
                                     <input type="date" class="form-control" name="start_date">
                                 </div>
                                 <div class="col">
-                                    <label class="form-label">End Date</label>
+                                    <label class="form-label text-muted small text-uppercase">End Date</label>
                                     <input type="date" class="form-control" name="end_date">
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Select Workloads</label>
-                                <select class="form-select" name="workload_ids" multiple required>
-                                    ${workloads.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}
-                                </select>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small text-uppercase">Individual AWIs</label>
+                                    <select class="form-select" name="workload_ids" multiple style="height: 150px;">
+                                        ${workloads.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small text-uppercase">Move Dependency Groups (MDGs)</label>
+                                    <select class="form-select" name="mdg_ids" multiple style="height: 150px;">
+                                        ${mdgs.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}
+                                    </select>
+                                </div>
                             </div>
-                            <button type="submit" class="btn btn-primary">Create Wave</button>
+                            <button type="submit" class="btn btn-dark w-100">Create Wave</button>
                         </form>
                     </div>
                 </div>
@@ -91,12 +104,14 @@ async function renderPlan() {
         e.preventDefault();
         const formData = new FormData(e.target);
         const selectedWorkloads = Array.from(e.target.workload_ids.selectedOptions).map(opt => opt.value);
+        const selectedMDGs = Array.from(e.target.mdg_ids.selectedOptions).map(opt => opt.value);
         
         const data = {
             name: formData.get('name'),
             start_date: formData.get('start_date'),
             end_date: formData.get('end_date'),
-            workload_ids: selectedWorkloads
+            workload_ids: selectedWorkloads,
+            mdg_ids: selectedMDGs
         };
         
         const res = await fetch('/plan/waves', {
@@ -130,3 +145,4 @@ async function renderPlan() {
 }
 
 window.renderPlan = renderPlan;
+})();

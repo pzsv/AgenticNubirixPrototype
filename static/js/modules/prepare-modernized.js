@@ -1,8 +1,8 @@
 // --- Module: Prepare (Modernized) ---
 let prepareState = {
-    currentStep: 'overview',
-    discoverSubview: 'sources',
-    mappingSubview: 'sources'
+    currentStep: 'ingestion',
+    ingestionSubview: 'sources',
+    standardisationSubview: 'sources'
 };
 
 async function renderPrepare() {
@@ -11,28 +11,24 @@ async function renderPrepare() {
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">Prepare</h2>
             <div class="stepper d-flex align-items-center">
-                <div class="step ${prepareState.currentStep === 'overview' ? 'active' : ''}" onclick="window.setPrepareStep('overview')">
-                    <i class="bi bi-speedometer2 me-1"></i> Overview
+                <div class="step ${prepareState.currentStep === 'ingestion' ? 'active' : ''}" onclick="window.setPrepareStep('ingestion')">
+                    <i class="bi bi-cloud-download me-1"></i> 1. Ingestion
                 </div>
                 <div class="step-line"></div>
-                <div class="step ${prepareState.currentStep === 'discover' ? 'active' : ''}" onclick="window.setPrepareStep('discover')">
-                    <i class="bi bi-search me-1"></i> Discover
+                <div class="step ${prepareState.currentStep === 'standardisation' ? 'active' : ''}" onclick="window.setPrepareStep('standardisation')">
+                    <i class="bi bi-diagram-3 me-1"></i> 2. Standardisation
                 </div>
                 <div class="step-line"></div>
-                <div class="step ${prepareState.currentStep === 'mapping' ? 'active' : ''}" onclick="window.setPrepareStep('mapping')">
-                    <i class="bi bi-diagram-3 me-1"></i> Mapping
+                <div class="step ${prepareState.currentStep === 'normalisation' ? 'active' : ''}" onclick="window.setPrepareStep('normalisation')">
+                    <i class="bi bi-magic me-1"></i> 3. Normalisation
                 </div>
                 <div class="step-line"></div>
-                <div class="step ${prepareState.currentStep === 'transform' ? 'active' : ''}" onclick="window.setPrepareStep('transform')">
-                    <i class="bi bi-magic me-1"></i> Transform
-                </div>
-                <div class="step-line"></div>
-                <div class="step ${prepareState.currentStep === 'consolidate' ? 'active' : ''}" onclick="window.setPrepareStep('consolidate')">
-                    <i class="bi bi-combine me-1"></i> Consolidate
+                <div class="step ${prepareState.currentStep === 'aggregation' ? 'active' : ''}" onclick="window.setPrepareStep('aggregation')">
+                    <i class="bi bi-combine me-1"></i> 4. Aggregation
                 </div>
                 <div class="step-line"></div>
                 <div class="step ${prepareState.currentStep === 'publish' ? 'active' : ''}" onclick="window.setPrepareStep('publish')">
-                    <i class="bi bi-cloud-upload me-1"></i> Publish
+                    <i class="bi bi-cloud-upload me-1"></i> 5. Publish
                 </div>
             </div>
         </div>
@@ -45,16 +41,16 @@ async function renderPrepare() {
 
 window.setPrepareStep = (step) => {
     prepareState.currentStep = step;
-    if (step === 'mapping' && !prepareState.mappingSubview) {
-        prepareState.mappingSubview = 'sources';
+    if (step === 'standardisation' && !prepareState.standardisationSubview) {
+        prepareState.standardisationSubview = 'sources';
     }
     renderPrepareStep();
 };
 
-window.goToMapping = (sourceName) => {
-    prepareState.mappingSource = sourceName;
-    prepareState.mappingSubview = 'fields';
-    window.setPrepareStep('mapping');
+window.goToStandardisation = (sourceName) => {
+    prepareState.standardisationSource = sourceName;
+    prepareState.standardisationSubview = 'fields';
+    window.setPrepareStep('standardisation');
 };
 
 async function renderPrepareStep() {
@@ -66,43 +62,39 @@ async function renderPrepareStep() {
         const text = el.textContent.trim().toLowerCase();
         const step = prepareState.currentStep;
         let active = false;
-        if (step === 'overview' && text.includes('overview')) active = true;
-        else if (step === 'discover' && text.includes('discover')) active = true;
-        else if (step === 'mapping' && text.includes('mapping')) active = true;
-        else if (step === 'transform' && text.includes('transform')) active = true;
-        else if (step === 'consolidate' && text.includes('consolidate')) active = true;
+        if (step === 'ingestion' && text.includes('ingestion')) active = true;
+        else if (step === 'standardisation' && text.includes('standardisation')) active = true;
+        else if (step === 'normalisation' && text.includes('normalisation')) active = true;
+        else if (step === 'aggregation' && text.includes('aggregation')) active = true;
         else if (step === 'publish' && text.includes('publish')) active = true;
         
         el.classList.toggle('active', active);
     });
 
     switch(prepareState.currentStep) {
-        case 'overview':
-            renderPrepareModernOverview(stepArea);
+        case 'ingestion':
+            await renderPrepareIngestion(stepArea);
             break;
-        case 'discover':
-            await renderPrepareDiscover(stepArea);
-            break;
-        case 'mapping':
-            if (prepareState.mappingSubview === 'fields') {
-                await renderMappingFields(stepArea);
+        case 'standardisation':
+            if (prepareState.standardisationSubview === 'fields') {
+                await renderStandardisationFields(stepArea);
             } else {
-                await renderMappingSources(stepArea);
+                await renderStandardisationSources(stepArea);
             }
             break;
-        case 'transform':
-            stepArea.innerHTML = '<h4>Transform</h4><p class="text-muted">Apply normalization and data cleaning rules.</p>';
+        case 'normalisation':
+            renderPrepareNormalisation(stepArea);
             break;
-        case 'consolidate':
-            stepArea.innerHTML = '<h4>Consolidate</h4><p class="text-muted">Merge data from multiple sources and deduplicate.</p>';
+        case 'aggregation':
+            renderPrepareAggregation(stepArea);
             break;
         case 'publish':
-            stepArea.innerHTML = '<h4>Publish</h4><p class="text-muted">Finalize and release data to the Map phase.</p>';
+            renderPreparePublish(stepArea);
             break;
     }
 }
 
-async function renderMappingSources(container) {
+async function renderStandardisationSources(container) {
     container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
     
     const response = await fetch('/prepare/data-sources');
@@ -110,14 +102,14 @@ async function renderMappingSources(container) {
 
     container.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="mb-0">Mapping</h4>
+            <h4 class="mb-0">Standardisation</h4>
             <div class="d-flex gap-2">
                 <button class="btn btn-outline-dark btn-sm">Filter</button>
                 <button class="btn btn-primary btn-sm">Verify All Ready</button>
             </div>
         </div>
         
-        <div id="mapping-sources-container">
+        <div id="standardisation-sources-container">
             <div class="card shadow-sm">
                 <div class="card-header bg-white py-3">
                     <h6 class="fw-bold mb-0">Ingested Data Sources</h6>
@@ -153,7 +145,7 @@ async function renderMappingSources(container) {
                                     <td><span class="badge ${src.status === 'Success' ? 'bg-success' : 'bg-warning text-dark'}">${src.status}</span></td>
                                     <td>
                                         <button class="btn btn-link btn-sm p-0 me-2" onclick="window.viewDataSourceDetails('${src.id}', '${src.name}')">Review</button>
-                                        <button class="btn btn-link btn-sm p-0" onclick="window.goToMapping('${src.name}')">Map Fields</button>
+                                        <button class="btn btn-link btn-sm p-0" onclick="window.goToStandardisation('${src.name}')">Map Fields</button>
                                     </td>
                                 </tr>
                             `).join('')}
@@ -166,7 +158,7 @@ async function renderMappingSources(container) {
     `;
 }
 
-async function renderMappingFields(container) {
+async function renderStandardisationFields(container) {
     const [mappingsRes, entitiesRes, ddFieldsRes] = await Promise.all([
         fetch('/prepare/field-mappings'),
         fetch('/data-entities'),
@@ -178,18 +170,18 @@ async function renderMappingFields(container) {
 
     // Group mappings by data source
     const sources = [...new Set(mappings.map(m => m.data_source))];
-    const currentSource = prepareState.mappingSource || (sources.length > 0 ? sources[0] : null);
+    const currentSource = prepareState.standardisationSource || (sources.length > 0 ? sources[0] : null);
 
     const filteredMappings = currentSource ? mappings.filter(m => m.data_source === currentSource) : [];
 
     container.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="mb-0">Field Mapping</h4>
+            <h4 class="mb-0">Field Mapping (Standardisation)</h4>
             <div class="d-flex gap-2">
-                <button class="btn btn-outline-dark btn-sm" onclick="window.setMappingSubview('sources')">
+                <button class="btn btn-outline-dark btn-sm" onclick="window.setStandardisationSubview('sources')">
                     <i class="bi bi-arrow-left me-1"></i> Back to List
                 </button>
-                <select class="form-select form-select-sm" onchange="window.setMappingSource(this.value)">
+                <select class="form-select form-select-sm" onchange="window.setStandardisationSource(this.value)">
                     <option value="">Select Data Source...</option>
                     ${sources.map(s => `<option value="${s}" ${s === currentSource ? 'selected' : ''}>${s}</option>`).join('')}
                 </select>
@@ -239,7 +231,7 @@ async function renderMappingFields(container) {
                                         <td class="fw-bold">${m.source_field}</td>
                                         <td>
                                             <select class="form-select form-select-sm" style="font-size: 0.75rem;" 
-                                                onchange="window.updateMappingModern('${m.id}', {data_entity: this.value, target_field: null})">
+                                                onchange="window.updateStandardisationMapping('${m.id}', {data_entity: this.value, target_field: null})">
                                                 <option value="">None</option>
                                                 ${entities.map(e => `<option value="${e.name}" ${m.data_entity === e.name ? 'selected' : ''}>${e.name}</option>`).join('')}
                                             </select>
@@ -247,14 +239,14 @@ async function renderMappingFields(container) {
                                         <td>
                                             <select class="form-select form-select-sm" style="font-size: 0.75rem;" 
                                                 ${!m.data_entity ? 'disabled' : ''}
-                                                onchange="window.updateMappingModern('${m.id}', {target_field: this.value, status: 'Resolved'})">
+                                                onchange="window.updateStandardisationMapping('${m.id}', {target_field: this.value, status: 'Resolved'})">
                                                 <option value="">None</option>
                                                 ${availableFields.map(f => `<option value="${f.name}" ${m.target_field === f.name ? 'selected' : ''}>${f.name}</option>`).join('')}
                                             </select>
                                         </td>
                                         <td>
                                             <select class="form-select form-select-sm" style="font-size: 0.75rem;"
-                                                onchange="window.updateMappingModern('${m.id}', {data_dictionary_field_id: this.value})">
+                                                onchange="window.updateStandardisationMapping('${m.id}', {data_dictionary_field_id: this.value})">
                                                 <option value="">No Normalization</option>
                                                 ${ddFields.map(df => `<option value="${df.id}" ${m.data_dictionary_field_id === df.id ? 'selected' : ''}>${df.entity} - ${df.name}</option>`).join('')}
                                             </select>
@@ -273,17 +265,17 @@ async function renderMappingFields(container) {
     `;
 }
 
-window.setMappingSource = (source) => {
-    prepareState.mappingSource = source;
+window.setStandardisationSource = (source) => {
+    prepareState.standardisationSource = source;
     renderPrepareStep();
 };
 
-window.setMappingSubview = (subview) => {
-    prepareState.mappingSubview = subview;
+window.setStandardisationSubview = (subview) => {
+    prepareState.standardisationSubview = subview;
     renderPrepareStep();
 };
 
-window.updateMappingModern = async (id, updates) => {
+window.updateStandardisationMapping = async (id, updates) => {
     await fetch(`/prepare/field-mappings/${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -381,7 +373,7 @@ function renderPrepareModernOverview(container) {
                                     <div class="text-muted" style="font-size: 0.75rem;">Source overlap in CMDB & Excel</div>
                                 </div>
                             </li>
-                            <li class="mb-3 d-flex align-items-start" style="cursor: pointer;" onclick="window.goToMapping()">
+                            <li class="mb-3 d-flex align-items-start" style="cursor: pointer;" onclick="window.goToStandardisation()">
                                 <i class="bi bi-diagram-3-fill text-primary me-2"></i>
                                 <div>
                                     <div class="fw-bold small">Map 45 Fields</div>
@@ -396,7 +388,7 @@ function renderPrepareModernOverview(container) {
                                 </div>
                             </li>
                         </ul>
-                        <button class="btn btn-dark btn-sm w-100 mt-4" onclick="window.setPrepareStep('discover')">Go to Discover</button>
+                        <button class="btn btn-dark btn-sm w-100 mt-4" onclick="window.setPrepareStep('ingestion')">Go to Ingestion</button>
                     </div>
                 </div>
             </div>
@@ -404,12 +396,12 @@ function renderPrepareModernOverview(container) {
     `;
 }
 
-async function renderPrepareDiscover(container) {
-    const activeSub = prepareState.discoverSubview || 'overview';
+async function renderPrepareIngestion(container) {
+    const activeSub = prepareState.ingestionSubview || 'overview';
     
     container.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="mb-0">Discover & Ingest</h4>
+            <h4 class="mb-0">Ingestion</h4>
         </div>
         
         <div class="mb-5">
@@ -425,7 +417,7 @@ async function renderPrepareDiscover(container) {
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card shadow-sm h-100 cursor-pointer hover-shadow ${activeSub === 'scans' ? 'border border-primary' : 'border-0'}" onclick="window.setDiscoverSubview('scans')">
+                    <div class="card shadow-sm h-100 cursor-pointer hover-shadow ${activeSub === 'scans' ? 'border border-primary' : 'border-0'}" onclick="window.setIngestionSubview('scans')">
                         <div class="card-body text-center py-4">
                             <i class="bi bi-broadcast fs-1 text-info mb-2"></i>
                             <h6 class="mb-1">Network Scan</h6>
@@ -468,11 +460,11 @@ async function renderPrepareDiscover(container) {
     }
 }
 
-window.setDiscoverSubview = async (subview) => {
-    if (prepareState.discoverSubview === subview) {
-        prepareState.discoverSubview = 'overview';
+window.setIngestionSubview = async (subview) => {
+    if (prepareState.ingestionSubview === subview) {
+        prepareState.ingestionSubview = 'overview';
     } else {
-        prepareState.discoverSubview = subview;
+        prepareState.ingestionSubview = subview;
     }
     await renderPrepareStep();
 };
@@ -639,14 +631,14 @@ window.createNewScan = async () => {
     
     if (response.ok) {
         bootstrap.Modal.getInstance(document.getElementById('newScanModal')).hide();
-        window.setDiscoverSubview('scans');
+        window.setIngestionSubview('scans');
     }
 }
 
 window.runNetworkScan = async (scanId) => {
     const response = await fetch(`/prepare/scans/${scanId}/run`, { method: 'POST' });
     if (response.ok) {
-        await window.setDiscoverSubview('scans');
+        await window.setIngestionSubview('scans');
         // View results of the run
         window.viewScanResults(scanId);
     }
@@ -698,7 +690,7 @@ window.viewScanResults = async (scanId) => {
 }
 
 window.viewDataSourceDetails = async (sourceId, sourceName) => {
-    let container = document.getElementById('mapping-sources-container');
+    let container = document.getElementById('standardisation-sources-container');
     if (!container) {
         container = document.getElementById('data-sources-container');
     }
@@ -738,7 +730,7 @@ window.viewDataSourceDetails = async (sourceId, sourceName) => {
                 <h6 class="fw-bold mb-0">Discovered Data: ${sourceName}</h6>
                 <div class="d-flex gap-2">
                     <span class="badge bg-light text-dark rounded-pill">${entities.length} records</span>
-                    <button class="btn btn-outline-primary btn-sm" onclick="window.goToMapping('${sourceName}')">Map Fields</button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="window.goToStandardisation('${sourceName}')">Map Fields</button>
                     <button class="btn btn-outline-dark btn-sm" onclick="window.renderPrepareStep()">Back to List</button>
                 </div>
             </div>
@@ -769,6 +761,221 @@ window.viewDataSourceDetails = async (sourceId, sourceName) => {
         </div>
     `;
 }
+
+async function renderPrepareNormalisation(container) {
+    container.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="mb-0">Normalisation</h4>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-dark btn-sm">Auto-Normalise</button>
+                <button class="btn btn-primary btn-sm">Validate Values</button>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="fw-bold mb-0">Fields for Normalisation</h6>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center active">
+                            <span>Environment</span>
+                            <span class="badge bg-white text-primary rounded-pill">12 issues</span>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <span>Operating System</span>
+                            <span class="badge bg-light text-dark rounded-pill">5 issues</span>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <span>Location</span>
+                            <span class="badge bg-light text-dark rounded-pill">0 issues</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="fw-bold mb-0">Value Alignment: Environment</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-hover mb-0 small">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Raw Value</th>
+                                    <th>Frequency</th>
+                                    <th>Standard Value</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>PROD-UK</code></td>
+                                    <td>45</td>
+                                    <td>
+                                        <select class="form-select form-select-sm">
+                                            <option>Production</option>
+                                            <option>Development</option>
+                                            <option>Testing</option>
+                                            <option selected>Production</option>
+                                        </select>
+                                    </td>
+                                    <td><button class="btn btn-outline-success btn-sm">Confirm</button></td>
+                                </tr>
+                                <tr>
+                                    <td><code>development_env</code></td>
+                                    <td>12</td>
+                                    <td>
+                                        <select class="form-select form-select-sm">
+                                            <option selected>Development</option>
+                                            <option>Production</option>
+                                        </select>
+                                    </td>
+                                    <td><button class="btn btn-outline-success btn-sm">Confirm</button></td>
+                                </tr>
+                                <tr class="table-warning">
+                                    <td><code>legacy-dmz</code></td>
+                                    <td>3</td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <select class="form-select">
+                                                <option selected disabled>Select Standard...</option>
+                                                <option>Production</option>
+                                                <option>Development</option>
+                                            </select>
+                                            <button class="btn btn-outline-primary">+ New</button>
+                                        </div>
+                                    </td>
+                                    <td><button class="btn btn-outline-success btn-sm" disabled>Confirm</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function renderPrepareAggregation(container) {
+    container.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="mb-0">Aggregation</h4>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-dark btn-sm">Find Duplicates</button>
+                <button class="btn btn-primary btn-sm">Resolve All Conflicts</button>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="fw-bold mb-0">Data Entity Conflicts & Gaps</h6>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0 small">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Entity (Anchor)</th>
+                            <th>Conflict/Gap Type</th>
+                            <th>Sources</th>
+                            <th>Details</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="table-danger">
+                            <td><code>WEB-SRV-01</code></td>
+                            <td><span class="badge bg-danger">Conflict</span> Value mismatch</td>
+                            <td>Excel Upload, CMDB Sync</td>
+                            <td>IP Address: 192.168.1.10 vs 10.0.0.50</td>
+                            <td><button class="btn btn-sm btn-primary">Resolve</button></td>
+                        </tr>
+                        <tr class="table-warning">
+                            <td><code>DB-SRV-99</code></td>
+                            <td><span class="badge bg-warning text-dark">Gap</span> Missing required field</td>
+                            <td>Network Scan</td>
+                            <td>Owner field is empty</td>
+                            <td><button class="btn btn-sm btn-outline-dark">Fill Gap</button></td>
+                        </tr>
+                        <tr>
+                            <td><code>APP-PORTAL-01</code></td>
+                            <td><span class="badge bg-success">Resolved</span> Duplicate merged</td>
+                            <td>Excel Upload, Manual Entry</td>
+                            <td>3 sources consolidated</td>
+                            <td><button class="btn btn-sm btn-outline-secondary">View</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+async function renderPreparePublish(container) {
+    container.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="mb-0">Publish</h4>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-8 text-center py-5">
+                <div class="mb-4">
+                    <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                </div>
+                <h3>Ready for Map Phase</h3>
+                <p class="text-muted mb-5">
+                    All standardisation, normalisation and aggregation issues have been resolved.<br>
+                    The data set is now ready to be promoted to the Map phase.
+                </p>
+                
+                <div class="card shadow-sm mb-5 text-start">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3">Publish Summary</h6>
+                        <div class="row g-3">
+                            <div class="col-6 col-md-3">
+                                <div class="p-3 bg-light rounded text-center">
+                                    <h4 class="mb-0">1,245</h4>
+                                    <small class="text-muted">Total CIs</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="p-3 bg-light rounded text-center">
+                                    <h4 class="mb-0">12</h4>
+                                    <small class="text-muted">Entities</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="p-3 bg-light rounded text-center">
+                                    <h4 class="mb-0">100%</h4>
+                                    <small class="text-muted">Standardised</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="p-3 bg-light rounded text-center">
+                                    <h4 class="mb-0">0</h4>
+                                    <small class="text-muted">Conflicts</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary btn-lg px-5" onclick="window.publishToMap()">
+                    Promote to Map Phase
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+window.publishToMap = async () => {
+    if (confirm('Are you sure you want to promote all data to the Map phase?')) {
+        // Implementation for promotion
+        alert('Data successfully promoted to Map phase!');
+        // In a real app, this would trigger a backend process
+    }
+};
 
 window.renderPrepareStep = renderPrepareStep;
 window.renderPrepare = renderPrepare;

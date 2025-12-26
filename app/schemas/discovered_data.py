@@ -20,6 +20,7 @@ class DiscoveredDataEntityBase(BaseModel):
     user: str
     data_entity_name: str
     created_time: Optional[str] = None
+    status: str = "Ingestion"
 
 class DiscoveredDataEntityCreate(DiscoveredDataEntityBase):
     pass

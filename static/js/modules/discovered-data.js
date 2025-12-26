@@ -75,6 +75,9 @@ window.renderDiscoveredDataEntities = async function(searchFilter = '', sortCol 
                                 <th style="cursor:pointer" onclick="window.renderDiscoveredDataEntities('${searchFilter}', 'fields_count', '${sortCol === 'fields_count' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
                                     Fields Count ${sortCol === 'fields_count' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
                                 </th>
+                                <th style="cursor:pointer" onclick="window.renderDiscoveredDataEntities('${searchFilter}', 'status', '${sortCol === 'status' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                                    Status ${sortCol === 'status' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                                </th>
                                 <th width="100" class="text-end pe-4">Actions</th>
                             </tr>
                         </thead>
@@ -86,12 +89,13 @@ window.renderDiscoveredDataEntities = async function(searchFilter = '', sortCol 
                                     <td>${entity.user}</td>
                                     <td><small class="text-muted">${entity.created_time}</small></td>
                                     <td><span class="badge bg-light text-dark border">${(entity.fields || []).length}</span></td>
+                                    <td><span class="badge bg-secondary">${entity.status || 'Ingested'}</span></td>
                                     <td class="text-end pe-4">
                                         <button class="btn btn-sm btn-outline-danger" onclick="window.deleteDiscoveredDataEntity('${entity.id}')"><i class="bi bi-trash"></i></button>
                                     </td>
                                 </tr>
                             `).join('')}
-                            ${entities.length === 0 ? '<tr><td colspan="6" class="text-center py-5 text-muted">No discovered data entities found.</td></tr>' : ''}
+                            ${entities.length === 0 ? '<tr><td colspan="7" class="text-center py-5 text-muted">No discovered data entities found.</td></tr>' : ''}
                         </tbody>
                     </table>
                 </div>

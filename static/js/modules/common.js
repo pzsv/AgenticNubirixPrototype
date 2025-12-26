@@ -1,4 +1,7 @@
 // Common Utilities
+(function() {
+    if (typeof window === 'undefined') return;
+
 function debounce(func, wait) {
     let timeout;
     return function(...args) {
@@ -9,3 +12,4 @@ function debounce(func, wait) {
 
 // Make it global if not using modules
 window.debounce = debounce;
+})();

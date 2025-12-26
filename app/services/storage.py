@@ -8,6 +8,7 @@ from datetime import datetime
 class DatabaseStorage:
     def __init__(self):
         Base.metadata.create_all(bind=engine)
+        self._migrate_db()
         # Seed only if empty
         with SessionLocal() as db:
             if db.query(models.DataField).count() == 0:
@@ -22,10 +23,25 @@ class DatabaseStorage:
                 self._seed_environments(db)
             if db.query(models.MovePrinciple).count() == 0:
                 self._seed_move_principles(db)
+            if db.query(models.ScoreCardFactor).count() == 0:
+                self._seed_score_card(db)
             if db.query(models.Workload).count() == 0:
                 self._seed_cis_workloads_dependencies(db)
             else:
                 self._fix_existing_ci_types(db)
+
+    def _migrate_db(self):
+        from sqlalchemy import inspect, text
+        inspector = inspect(engine)
+        
+        # Add status column to discovered_data_entities if it doesn't exist
+        tables = inspector.get_table_names()
+        if 'discovered_data_entities' in tables:
+            columns = [col['name'] for col in inspector.get_columns('discovered_data_entities')]
+            if 'status' not in columns:
+                with engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE discovered_data_entities ADD COLUMN status VARCHAR DEFAULT 'Ingested'"))
+                    conn.commit()
 
     def _fix_existing_ci_types(self, db: Session):
         # Fix legacy CI types that might not match the new lowercase enum
@@ -527,12 +543,16 @@ class DatabaseStorage:
             workload_ids = wave_data.get("workload_ids", [])
             db_workloads = db.query(models.Workload).filter(models.Workload.id.in_(workload_ids)).all()
             
+            mdg_ids = wave_data.get("mdg_ids", [])
+            db_mdgs = db.query(models.MoveDependencyGroup).filter(models.MoveDependencyGroup.id.in_(mdg_ids)).all()
+            
             db_wave = models.Wave(
                 id=wave_id,
                 name=wave_data["name"],
                 start_date=wave_data.get("start_date"),
                 end_date=wave_data.get("end_date"),
-                workloads=db_workloads
+                workloads=db_workloads,
+                mdgs=db_mdgs
             )
             db.add(db_wave)
             db.commit()
@@ -547,7 +567,8 @@ class DatabaseStorage:
                     "name": w.name,
                     "start_date": w.start_date,
                     "end_date": w.end_date,
-                    "workload_ids": [wl.id for wl in w.workloads]
+                    "workload_ids": [wl.id for wl in w.workloads],
+                    "mdg_ids": [m.id for m in w.mdgs]
                 } for w in waves
             ]
 
@@ -560,7 +581,8 @@ class DatabaseStorage:
                     "name": w.name,
                     "start_date": w.start_date,
                     "end_date": w.end_date,
-                    "workload_ids": [wl.id for wl in w.workloads]
+                    "workload_ids": [wl.id for wl in w.workloads],
+                    "mdg_ids": [m.id for m in w.mdgs]
                 }
             return None
 
@@ -923,7 +945,8 @@ class DatabaseStorage:
             source_type=entity_data["source_type"],
             user=entity_data["user"],
             data_entity_name=entity_data["data_entity_name"],
-            data_source_id=entity_data.get("data_source_id")
+            data_source_id=entity_data.get("data_source_id"),
+            status=entity_data.get("status", "Ingested")
         )
         if db:
             db.add(db_entity)
@@ -948,6 +971,7 @@ class DatabaseStorage:
                     "user": e.user,
                     "data_entity_name": e.data_entity_name,
                     "data_source_id": e.data_source_id,
+                    "status": e.status,
                     "fields": [
                         {
                             "id": f.id, 
@@ -973,6 +997,7 @@ class DatabaseStorage:
                     "user": e.user,
                     "data_entity_name": e.data_entity_name,
                     "data_source_id": e.data_source_id,
+                    "status": e.status,
                     "fields": [
                         {
                             "id": f.id, 
@@ -1202,6 +1227,224 @@ class DatabaseStorage:
             db_principle = db.query(models.MovePrinciple).filter(models.MovePrinciple.id == principle_id).first()
             if db_principle:
                 db.delete(db_principle)
+                db.commit()
+                return True
+            return False
+
+    def _seed_score_card(self, db: Session):
+        factors = [
+            {"name": "Technical Aspects", "weight": 3, "description": "Complexity, legacy debt, integration density", "options": [
+                {"name": "Low Complexity", "score": 10},
+                {"name": "Medium Complexity", "score": 5},
+                {"name": "High Complexity", "score": 1}
+            ]},
+            {"name": "Current Location", "weight": 1, "description": "Where it is now", "options": [
+                {"name": "On-Premise", "score": 1},
+                {"name": "Co-location", "score": 3},
+                {"name": "Public Cloud", "score": 5}
+            ]},
+            {"name": "Target Location", "weight": 2, "description": "Where it is going", "options": [
+                {"name": "AWS", "score": 5},
+                {"name": "Azure", "score": 5},
+                {"name": "On-Premise", "score": 1}
+            ]},
+            {"name": "Risks", "weight": 4, "description": "Business impact of migration failure", "options": [
+                {"name": "Low", "score": 10},
+                {"name": "Medium", "score": 5},
+                {"name": "High", "score": 1}
+            ]},
+            {"name": "Skills in Team", "weight": 2, "description": "Team familiarity with target tech", "options": [
+                {"name": "Expert", "score": 10},
+                {"name": "Competent", "score": 5},
+                {"name": "Novice", "score": 1}
+            ]},
+            {"name": "TCO", "weight": 3, "description": "Total Cost of Ownership impact", "options": [
+                {"name": "Significant Saving", "score": 10},
+                {"name": "Neutral", "score": 5},
+                {"name": "Cost Increase", "score": 1}
+            ]},
+            {"name": "ESG", "weight": 2, "description": "Environmental, Social, and Governance impact", "options": [
+                {"name": "Positive", "score": 10},
+                {"name": "Neutral", "score": 5},
+                {"name": "Negative", "score": 1}
+            ]}
+        ]
+        for f in factors:
+            options = f.pop("options")
+            factor_id = self.add_score_card_factor(f, db)
+            for opt in options:
+                opt["factor_id"] = factor_id
+                self.add_score_card_option(opt, db)
+
+    # Score Card CRUD
+    def add_score_card_factor(self, factor_data: Dict[str, Any], db: Optional[Session] = None):
+        if db is None:
+            with SessionLocal() as db:
+                return self._add_score_card_factor_impl(factor_data, db)
+        return self._add_score_card_factor_impl(factor_data, db)
+
+    def _add_score_card_factor_impl(self, factor_data: Dict[str, Any], db: Session):
+        factor_id = factor_data.get("id", str(uuid.uuid4()))
+        db_factor = models.ScoreCardFactor(
+            id=factor_id,
+            name=factor_data["name"],
+            weight=factor_data.get("weight", 1),
+            description=factor_data.get("description", "")
+        )
+        db.add(db_factor)
+        db.commit()
+        return factor_id
+
+    def get_score_card_factors(self) -> List[Dict[str, Any]]:
+        with SessionLocal() as db:
+            factors = db.query(models.ScoreCardFactor).all()
+            result = []
+            for f in factors:
+                result.append({
+                    "id": f.id,
+                    "name": f.name,
+                    "weight": f.weight,
+                    "description": f.description,
+                    "options": [{"id": o.id, "name": o.name, "score": o.score} for o in f.options]
+                })
+            return result
+
+    def add_score_card_option(self, option_data: Dict[str, Any], db: Optional[Session] = None):
+        if db is None:
+            with SessionLocal() as db:
+                return self._add_score_card_option_impl(option_data, db)
+        return self._add_score_card_option_impl(option_data, db)
+
+    def _add_score_card_option_impl(self, option_data: Dict[str, Any], db: Session):
+        option_id = option_data.get("id", str(uuid.uuid4()))
+        db_option = models.ScoreCardOption(
+            id=option_id,
+            factor_id=option_data["factor_id"],
+            name=option_data["name"],
+            score=option_data["score"]
+        )
+        db.add(db_option)
+        db.commit()
+        return option_id
+
+    # S2T Mapping CRUD
+    def add_s2t_mapping(self, mapping_data: Dict[str, Any]):
+        with SessionLocal() as db:
+            mapping_id = mapping_data.get("id", str(uuid.uuid4()))
+            db_mapping = models.S2TMapping(
+                id=mapping_id,
+                workload_id=mapping_data["workload_id"],
+                move_principle_id=mapping_data.get("move_principle_id"),
+                target_environment_id=mapping_data.get("target_environment_id"),
+                target_location=mapping_data.get("target_location"),
+                score_card_results=mapping_data.get("score_card_results", {}),
+                total_score=mapping_data.get("total_score", 0),
+                status=mapping_data.get("status", "Draft")
+            )
+            db.add(db_mapping)
+            db.commit()
+            return mapping_id
+
+    def get_s2t_mappings(self) -> List[Dict[str, Any]]:
+        with SessionLocal() as db:
+            mappings = db.query(models.S2TMapping).all()
+            return [
+                {
+                    "id": m.id,
+                    "workload_id": m.workload_id,
+                    "move_principle_id": m.move_principle_id,
+                    "target_environment_id": m.target_environment_id,
+                    "target_location": m.target_location,
+                    "score_card_results": m.score_card_results,
+                    "total_score": m.total_score,
+                    "status": m.status
+                } for m in mappings
+            ]
+            
+    def get_s2t_mapping_by_workload(self, workload_id: str) -> Optional[Dict[str, Any]]:
+        with SessionLocal() as db:
+            m = db.query(models.S2TMapping).filter(models.S2TMapping.workload_id == workload_id).first()
+            if m:
+                return {
+                    "id": m.id,
+                    "workload_id": m.workload_id,
+                    "move_principle_id": m.move_principle_id,
+                    "target_environment_id": m.target_environment_id,
+                    "target_location": m.target_location,
+                    "score_card_results": m.score_card_results,
+                    "total_score": m.total_score,
+                    "status": m.status
+                }
+            return None
+
+    def update_s2t_mapping(self, mapping_id: str, updates: Dict[str, Any]) -> bool:
+        with SessionLocal() as db:
+            db_mapping = db.query(models.S2TMapping).filter(models.S2TMapping.id == mapping_id).first()
+            if db_mapping:
+                for key, value in updates.items():
+                    if hasattr(db_mapping, key):
+                        setattr(db_mapping, key, value)
+                db.commit()
+                return True
+            return False
+
+    # MDG CRUD
+    def add_mdg(self, mdg_data: Dict[str, Any]):
+        with SessionLocal() as db:
+            mdg_id = mdg_data.get("id", str(uuid.uuid4()))
+            db_mdg = models.MoveDependencyGroup(
+                id=mdg_id,
+                name=mdg_data["name"],
+                description=mdg_data.get("description", ""),
+                score_card_results=mdg_data.get("score_card_results", {}),
+                total_score=mdg_data.get("total_score", 0),
+                status=mdg_data.get("status", "Draft")
+            )
+            
+            if mdg_data.get("workload_ids"):
+                workloads = db.query(models.Workload).filter(models.Workload.id.in_(mdg_data["workload_ids"])).all()
+                db_mdg.workloads = workloads
+                
+            db.add(db_mdg)
+            db.commit()
+            return mdg_id
+
+    def get_mdgs(self) -> List[Dict[str, Any]]:
+        with SessionLocal() as db:
+            mdgs = db.query(models.MoveDependencyGroup).all()
+            return [
+                {
+                    "id": m.id,
+                    "name": m.name,
+                    "description": m.description,
+                    "workload_ids": [w.id for w in m.workloads],
+                    "score_card_results": m.score_card_results,
+                    "total_score": m.total_score,
+                    "status": m.status
+                } for m in mdgs
+            ]
+
+    def update_mdg(self, mdg_id: str, updates: Dict[str, Any]) -> bool:
+        with SessionLocal() as db:
+            db_mdg = db.query(models.MoveDependencyGroup).filter(models.MoveDependencyGroup.id == mdg_id).first()
+            if db_mdg:
+                if "workload_ids" in updates:
+                    workloads = db.query(models.Workload).filter(models.Workload.id.in_(updates["workload_ids"])).all()
+                    db_mdg.workloads = workloads
+                    del updates["workload_ids"]
+                    
+                for key, value in updates.items():
+                    if hasattr(db_mdg, key):
+                        setattr(db_mdg, key, value)
+                db.commit()
+                return True
+            return False
+
+    def delete_mdg(self, mdg_id: str) -> bool:
+        with SessionLocal() as db:
+            db_mdg = db.query(models.MoveDependencyGroup).filter(models.MoveDependencyGroup.id == mdg_id).first()
+            if db_mdg:
+                db.delete(db_mdg)
                 db.commit()
                 return True
             return False

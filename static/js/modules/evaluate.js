@@ -1,4 +1,7 @@
 // --- Module: Evaluate ---
+(function() {
+    if (typeof window === 'undefined') return;
+
 async function renderEvaluate() {
     const contentArea = document.getElementById('main-area');
     const [dashRes, reportsRes] = await Promise.all([
@@ -105,3 +108,4 @@ async function renderEvaluate() {
 }
 
 window.renderEvaluate = renderEvaluate;
+})();

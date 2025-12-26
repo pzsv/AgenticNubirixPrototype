@@ -1,4 +1,7 @@
 // --- Module: Home ---
+(function() {
+    if (typeof window === 'undefined') return;
+
 function renderHome(context = 'modern') {
     const contentArea = document.getElementById('main-area');
     const prepareModule = context === 'old' ? 'prepare-old' : 'prepare';
@@ -68,3 +71,4 @@ function renderHome(context = 'modern') {
 }
 
 window.renderHome = renderHome;
+})();
