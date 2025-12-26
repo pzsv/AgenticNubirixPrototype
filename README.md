@@ -87,11 +87,29 @@ The application follows a linear workflow:
 4. **Move**: Generate runbooks via `POST /move/generate/{workload_id}`.
 5. **Evaluate**: Check the overall status at `GET /evaluate/dashboard`.
 
-## Data Ingestion
+## Deployment on AWS EC2
 
-All modules support CSV and Excel ingestion. 
-Example CSV format for CIs:
-```csv
-name,type,description,properties
-web-server-01,server,Production web server,"{""cpu"": 4, ""ram"": ""16GB""}"
-```
+### Initial Deployment
+Follow the instructions provided in the deployment guide using `deploy_ec2.sh`.
+
+### Updating the Code
+When you make changes to your code and push them to your repository, you can update the EC2 instance by following these steps:
+
+1.  SSH into your EC2 instance:
+    ```bash
+    ssh -i "your-key.pem" ubuntu@<EC2-PUBLIC-IP>
+    ```
+2.  Navigate to the project directory:
+    ```bash
+    cd AgenticNubirixPrototype
+    ```
+3.  Run the update script:
+    ```bash
+    chmod +x update_ec2.sh
+    ./update_ec2.sh
+    ```
+
+The `update_ec2.sh` script will:
+- Pull the latest code from `main`.
+- Update Python dependencies.
+- Restart the `nubirix` service.

@@ -239,3 +239,29 @@ class MoveDependencyGroup(Base):
     status = Column(String)
     
     workloads = relationship("Workload", secondary=mdg_workload)
+
+class Role(Base):
+    __tablename__ = "roles"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, unique=True, index=True)
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String, unique=True, index=True)
+    password = Column(String)
+    role_id = Column(Integer, ForeignKey("roles.id"))
+    
+    role = relationship("Role")
+
+class AccessRight(Base):
+    __tablename__ = "access_rights"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    role_id = Column(Integer, ForeignKey("roles.id"))
+    feature = Column(String)
+    read = Column(Boolean, default=False)
+    write = Column(Boolean, default=False)
+    delete = Column(Boolean, default=False)
+    execute = Column(Boolean, default=False)
+    
+    role = relationship("Role")

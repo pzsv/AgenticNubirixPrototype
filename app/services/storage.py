@@ -29,6 +29,42 @@ class DatabaseStorage:
                 self._seed_cis_workloads_dependencies(db)
             else:
                 self._fix_existing_ci_types(db)
+            if db.query(models.User).count() == 0:
+                self._seed_users(db)
+
+    def _seed_users(self, db: Session):
+        # 1. Create super_admin role
+        super_admin_role = models.Role(name="super_admin")
+        db.add(super_admin_role)
+        db.flush()
+
+        # 2. Create super_admin user
+        super_admin_user = models.User(
+            username="super_admin",
+            password="nubirix123456",  # In a real app, this should be hashed
+            role_id=super_admin_role.id
+        )
+        db.add(super_admin_user)
+
+        # 3. Create access rights for all features
+        features = [
+            'home', 'prepare', 'prepare-old', 'map', 'plan', 'move', 'evaluate',
+            'discovered-data', 'data-dictionary', 'data-entities', 'environments',
+            'move-principles', 'score-card', 'admin-project', 'admin-users', 'admin-failures', 'help'
+        ]
+
+        for feature in features:
+            ar = models.AccessRight(
+                role_id=super_admin_role.id,
+                feature=feature,
+                read=True,
+                write=True,
+                delete=True,
+                execute=True
+            )
+            db.add(ar)
+        
+        db.commit()
 
     def _migrate_db(self):
         from sqlalchemy import inspect, text

@@ -1,8 +1,105 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const loginScreen = document.getElementById('login-screen');
+    const appWrapper = document.getElementById('app-wrapper');
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    
     const sidebar = document.getElementById('sidebar');
     const sidebarCollapse = document.getElementById('sidebarCollapse');
     const navLinks = document.querySelectorAll('#sidebar a[data-module]');
     const contentArea = document.getElementById('main-area');
+
+    // Authentication
+    let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+    function checkAuth() {
+        if (!currentUser) {
+            loginScreen.style.display = 'flex';
+            loginScreen.style.setProperty('display', 'flex', 'important');
+            appWrapper.style.display = 'none';
+        } else {
+            loginScreen.style.display = 'none';
+            loginScreen.style.setProperty('display', 'none', 'important');
+            appWrapper.style.display = 'flex';
+            applyAccessRights();
+            
+            // Initial load
+            if (!window.currentModule) {
+                if (window.renderHome) {
+                    window.currentModule = 'home';
+                    window.renderHome('modern');
+                } else {
+                    setTimeout(() => {
+                        if (window.renderHome) {
+                            window.currentModule = 'home';
+                            window.renderHome('modern');
+                        }
+                    }, 100);
+                }
+            }
+        }
+    }
+
+    function applyAccessRights() {
+        if (!currentUser || !currentUser.access_rights) return;
+        
+        const rights = currentUser.access_rights;
+        navLinks.forEach(link => {
+            const module = link.getAttribute('data-module');
+            const right = rights.find(r => r.feature === module);
+            
+            if (right && (right.read || right.write || right.delete || right.execute)) {
+                link.parentElement.style.display = 'block';
+            } else {
+                link.parentElement.style.display = 'none';
+            }
+        });
+    }
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            loginError.style.display = 'none';
+            
+            try {
+                const response = await fetch('/users/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (response.ok) {
+                    currentUser = await response.json();
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    checkAuth();
+                } else {
+                    const err = await response.json();
+                    loginError.textContent = err.detail || 'Login failed';
+                    loginError.style.display = 'block';
+                }
+            } catch (error) {
+                loginError.textContent = 'Connection error';
+                loginError.style.display = 'block';
+            }
+        });
+    }
+
+    // Logout function
+    window.logout = () => {
+        localStorage.removeItem('currentUser');
+        currentUser = null;
+        window.currentModule = null;
+        checkAuth();
+    };
+
+    // Update account section in sidebar
+    if (currentUser) {
+        const accountSection = document.querySelector('.account-section p');
+        if (accountSection) accountSection.textContent = currentUser.username;
+    }
 
     if (sidebarCollapse) {
         sidebarCollapse.addEventListener('click', () => {
@@ -110,8 +207,10 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'score-card':
                 if (window.renderScoreCard) await window.renderScoreCard();
                 break;
-            case 'admin-project':
             case 'admin-users':
+                if (window.renderAdminUsers) await window.renderAdminUsers();
+                break;
+            case 'admin-project':
             case 'admin-failures':
                 window.setHelpSection('help-' + module);
                 contentArea.innerHTML = `
@@ -130,16 +229,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initial load
-    if (window.renderHome) {
-        window.currentModule = 'home';
-        window.renderHome('modern');
-    } else {
-        // Fallback if home.js is not loaded yet
-        setTimeout(() => {
-            if (window.renderHome) {
-                window.currentModule = 'home';
-                window.renderHome('modern');
-            }
-        }, 100);
-    }
+    checkAuth();
 });
