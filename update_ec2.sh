@@ -17,7 +17,18 @@ pip install -r requirements.txt
 echo "Restarting the nubirix service..."
 sudo systemctl restart nubirix
 
-echo "------------------------------------------------"
-echo "Update complete!"
-echo "The app has been restarted with the latest code."
-echo "------------------------------------------------"
+# 4. Check status
+echo "Checking service status..."
+sleep 2
+if systemctl is-active --quiet nubirix; then
+    echo "------------------------------------------------"
+    echo "Update complete and service is ACTIVE!"
+    echo "The app is running at http://$(curl -s http://checkip.amazonaws.com || echo '<EC2-PUBLIC-IP>'):8000"
+    echo "------------------------------------------------"
+else
+    echo "------------------------------------------------"
+    echo "WARNING: Update finished but service FAILED to start."
+    echo "Run 'journalctl -u nubirix -e' to see error logs."
+    echo "------------------------------------------------"
+    exit 1
+fi

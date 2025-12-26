@@ -113,3 +113,19 @@ The `update_ec2.sh` script will:
 - Pull the latest code from `main`.
 - Update Python dependencies.
 - Restart the `nubirix` service.
+
+## Troubleshooting Deployment
+
+If you cannot access the application via the Public IP after deployment:
+
+1.  **Check Port 8000**: Ensure you are using `:8000` at the end of the URL (e.g., `http://54.x.x.x:8000`).
+2.  **AWS Security Group**: Ensure your EC2 Security Group has an **Inbound Rule** to allow **Custom TCP** on port **8000** from **0.0.0.0/0** (or your IP).
+3.  **Run the Debugger**: We've included a script to help you diagnose issues on the server.
+    ```bash
+    chmod +x debug_ec2.sh
+    ./debug_ec2.sh
+    ```
+4.  **Check Service Logs**: If the service is failing, check the detailed logs:
+    ```bash
+    journalctl -u nubirix -e
+    ```
