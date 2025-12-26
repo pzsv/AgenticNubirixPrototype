@@ -29,42 +29,68 @@ class DatabaseStorage:
                 self._seed_cis_workloads_dependencies(db)
             else:
                 self._fix_existing_ci_types(db)
-            if db.query(models.User).count() == 0:
-                self._seed_users(db)
+            
+            # Always ensure super_admin exists
+            self._seed_users(db)
 
     def _seed_users(self, db: Session):
-        # 1. Create super_admin role
-        super_admin_role = models.Role(name="super_admin")
-        db.add(super_admin_role)
-        db.flush()
+        try:
+            # 1. Create super_admin role if not exists
+            super_admin_role = db.query(models.Role).filter(models.Role.name == "super_admin").first()
+            if not super_admin_role:
+                print("Seeding: Creating super_admin role...")
+                super_admin_role = models.Role(name="super_admin")
+                db.add(super_admin_role)
+                db.flush()
+            
+            # 2. Create super_admin user if not exists
+            super_admin_user = db.query(models.User).filter(models.User.username == "super_admin").first()
+            if not super_admin_user:
+                print("Seeding: Creating super_admin user...")
+                super_admin_user = models.User(
+                    username="super_admin",
+                    password="nubirix123456",  # In a real app, this should be hashed
+                    role_id=super_admin_role.id
+                )
+                db.add(super_admin_user)
+            else:
+                # Ensure password is correct even if it was changed or failed previously
+                super_admin_user.password = "nubirix123456"
+                super_admin_user.role_id = super_admin_role.id
+            
+            # 3. Create access rights for all features
+            features = [
+                'home', 'prepare', 'prepare-old', 'map', 'plan', 'move', 'evaluate',
+                'discovered-data', 'data-dictionary', 'data-entities', 'environments',
+                'move-principles', 'score-card', 'admin-project', 'admin-users', 'admin-failures', 'help'
+            ]
 
-        # 2. Create super_admin user
-        super_admin_user = models.User(
-            username="super_admin",
-            password="nubirix123456",  # In a real app, this should be hashed
-            role_id=super_admin_role.id
-        )
-        db.add(super_admin_user)
-
-        # 3. Create access rights for all features
-        features = [
-            'home', 'prepare', 'prepare-old', 'map', 'plan', 'move', 'evaluate',
-            'discovered-data', 'data-dictionary', 'data-entities', 'environments',
-            'move-principles', 'score-card', 'admin-project', 'admin-users', 'admin-failures', 'help'
-        ]
-
-        for feature in features:
-            ar = models.AccessRight(
-                role_id=super_admin_role.id,
-                feature=feature,
-                read=True,
-                write=True,
-                delete=True,
-                execute=True
-            )
-            db.add(ar)
-        
-        db.commit()
+            for feature in features:
+                ar = db.query(models.AccessRight).filter(
+                    models.AccessRight.role_id == super_admin_role.id,
+                    models.AccessRight.feature == feature
+                ).first()
+                if not ar:
+                    ar = models.AccessRight(
+                        role_id=super_admin_role.id,
+                        feature=feature,
+                        read=True,
+                        write=True,
+                        delete=True,
+                        execute=True
+                    )
+                    db.add(ar)
+                else:
+                    ar.read = True
+                    ar.write = True
+                    ar.delete = True
+                    ar.execute = True
+            
+            db.commit()
+            print("Seeding: User management seed successful.")
+        except Exception as e:
+            db.rollback()
+            print(f"Seeding Error (users): {e}")
 
     def _migrate_db(self):
         from sqlalchemy import inspect, text
