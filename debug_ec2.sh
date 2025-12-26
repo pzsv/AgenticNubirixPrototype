@@ -8,7 +8,12 @@ if systemctl is-active --quiet nubirix; then
     echo "ACTIVE"
 else
     echo "FAILED"
-    echo "Error: The service is not running. Check logs with: journalctl -u nubirix -n 50"
+    echo "------------------------------------------------"
+    echo "CRITICAL ERROR: The application service is NOT running."
+    echo "Here are the last 20 lines of the error log:"
+    echo "------------------------------------------------"
+    sudo journalctl -u nubirix -n 20 --no-pager
+    echo "------------------------------------------------"
 fi
 
 # 2. Check if the port is listening
