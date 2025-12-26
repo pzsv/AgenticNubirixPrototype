@@ -4,6 +4,7 @@
 
 async function renderPlan() {
     const contentArea = document.getElementById('main-area');
+    if (window.setHelpSection) window.setHelpSection('help-plan');
     const [workloadsRes, wavesRes, mdgsRes] = await Promise.all([
         fetch('/map/workloads'),
         fetch('/plan/waves'),

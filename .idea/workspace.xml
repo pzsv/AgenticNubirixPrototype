@@ -4,11 +4,20 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dd3a8f81-e856-4b78-92eb-8eb6000a4067" name="Changes" comment="Map: AWIs, Dep Links, S2Ts, MDGs added as steps">
+    <list default="true" id="dd3a8f81-e856-4b78-92eb-8eb6000a4067" name="Changes" comment="Help Center actualised">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/storage.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/storage.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/prototype.db" beforeDir="false" afterPath="$PROJECT_DIR$/prototype.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/static/index.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/static/js/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/app.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/evaluate.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/evaluate.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/static/js/modules/help.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/help.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/home.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/home.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/map.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/map.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/move.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/move.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/plan.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/plan.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/prepare-modernized.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/prepare-modernized.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/score-card.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/score-card.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,6 +30,7 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="GitHubPullRequestSearchHistory"><![CDATA[{
   "lastFilter": {
@@ -85,7 +95,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1766544897662</updated>
-      <workItem from="1766544898713" duration="23495000" />
+      <workItem from="1766544898713" duration="25293000" />
     </task>
     <task id="LOCAL-00001" summary="app.js split between modules and features">
       <option name="closed" value="true" />
@@ -175,7 +185,15 @@
       <option name="project" value="LOCAL" />
       <updated>1766722801668</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="Help Center actualised">
+      <option name="closed" value="true" />
+      <created>1766723150905</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1766723150905</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -193,10 +211,11 @@
     <MESSAGE value="Prepare and Data Management changs" />
     <MESSAGE value="Prepare phase now follows data states as Ingestion, Standardisation,, Normalisation, Aggregation and Publish" />
     <MESSAGE value="Map: AWIs, Dep Links, S2Ts, MDGs added as steps" />
-    <option name="LAST_COMMIT_MESSAGE" value="Map: AWIs, Dep Links, S2Ts, MDGs added as steps" />
+    <MESSAGE value="Help Center actualised" />
+    <option name="LAST_COMMIT_MESSAGE" value="Help Center actualised" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/AgenticNubirixPrototype$main.coverage" NAME="main Coverage Results" MODIFIED="1766717371832" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/AgenticNubirixPrototype$main.coverage" NAME="main Coverage Results" MODIFIED="1766724498899" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/AgenticNubirixPrototype$data_entities.coverage" NAME="data_entities Coverage Results" MODIFIED="1766552369441" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/app/api" />
   </component>
 </project>

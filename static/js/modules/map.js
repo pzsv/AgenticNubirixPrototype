@@ -20,6 +20,11 @@ window.setMapStep = (step) => {
 async function renderMap() {
     const contentArea = document.getElementById('main-area');
     
+    // Update granular help section
+    if (window.setHelpSection) {
+        window.setHelpSection(`help-map-${mapState.currentStep}`);
+    }
+
     // Fetch environments and move principles
     let environments = ['PROD', 'TEST', 'DEV', 'STAGE'];
     let movePrinciples = ['Rehost', 'Relocate', 'Replatform', 'Refactor', 'Repurchase', 'Retire', 'Retain'];
@@ -646,17 +651,21 @@ window.showEditS2TModal = async (awiId, awiName) => {
     
     // Load score card factors
     const factorsRes = await fetch('/score-card/factors');
+    if (!factorsRes.ok) {
+        console.error("Failed to fetch score card factors");
+        return;
+    }
     const factors = await factorsRes.json();
     
     const factorsArea = document.getElementById('s2t-score-card-factors');
-    if (factorsArea) {
+    if (factorsArea && Array.isArray(factors)) {
         factorsArea.innerHTML = factors.map(f => `
             <div class="mb-3">
-                <label class="form-label small text-muted text-uppercase mb-1">${f.name}</label>
-                <select class="form-select form-select-sm score-card-input" data-factor-id="${f.id}" data-weight="${f.weight}" onchange="window.calculateS2TScore()">
+                <label class="form-label small text-muted text-uppercase mb-1">${f.name || 'Unnamed Factor'}</label>
+                <select class="form-select form-select-sm score-card-input" data-factor-id="${f.id}" data-weight="${f.weight || 1}" onchange="window.calculateS2TScore()">
                     <option value="">-- Select --</option>
-                    ${f.options.map(o => `
-                        <option value="${o.id}" data-score="${o.score}" ${mapping.score_card_results[f.id] === o.id ? 'selected' : ''}>${o.name} (Score: ${o.score})</option>
+                    ${(f.options || []).map(o => `
+                        <option value="${o.id}" data-score="${o.score}" ${mapping.score_card_results && mapping.score_card_results[f.id] === o.id ? 'selected' : ''}>${o.name} (Score: ${o.score})</option>
                     `).join('')}
                 </select>
             </div>

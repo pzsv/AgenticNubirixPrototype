@@ -4,6 +4,7 @@
 
 async function renderEvaluate() {
     const contentArea = document.getElementById('main-area');
+    if (window.setHelpSection) window.setHelpSection('help-evaluate');
     const [dashRes, reportsRes] = await Promise.all([
         fetch('/evaluate/dashboard'),
         fetch('/evaluate/reports')

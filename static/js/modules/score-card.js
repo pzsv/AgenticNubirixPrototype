@@ -4,10 +4,18 @@
 
 async function renderScoreCard() {
     const contentArea = document.getElementById('main-area');
+    if (window.setHelpSection) window.setHelpSection('help-score-card');
     
     try {
         const response = await fetch('/score-card/factors');
+        if (!response.ok) {
+            throw new Error(`Failed to fetch factors: ${response.status} ${response.statusText}`);
+        }
         const factors = await response.json();
+        
+        if (!Array.isArray(factors)) {
+            throw new Error("Invalid data format: factors is not an array");
+        }
         
         const html = `
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -33,17 +41,19 @@ async function renderScoreCard() {
                             <tbody>
                                 ${factors.map(f => `
                                     <tr>
-                                        <td class="ps-4 fw-medium">${f.name}</td>
+                                        <td class="ps-4 fw-medium">${f.name || 'Unnamed Factor'}</td>
                                         <td><span class="badge bg-secondary">${f.weight}</span></td>
                                         <td class="text-muted small">${f.description || ''}</td>
                                         <td>
-                                            ${f.options.map(o => `
+                                            ${(f.options || []).map(o => `
                                                 <div class="small d-flex justify-content-between border-bottom py-1">
                                                     <span>${o.name}</span>
                                                     <span class="text-primary fw-bold">${o.score}</span>
                                                 </div>
                                             `).join('')}
-                                            <button class="btn btn-link btn-sm p-0 mt-1" onclick="window.showAddOptionModal('${f.id}', '${f.name}')">
+                                            <button class="btn btn-link btn-sm p-0 mt-1 btn-add-option" 
+                                                    data-factor-id="${f.id}" 
+                                                    data-factor-name="${(f.name || '').replace(/"/g, '&quot;')}">
                                                 <i class="bi bi-plus-circle"></i> Add Option
                                             </button>
                                         </td>
@@ -124,6 +134,15 @@ async function renderScoreCard() {
         `;
         contentArea.innerHTML = html;
         
+        // Add event listeners for "Add Option" buttons
+        contentArea.querySelectorAll('.btn-add-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const factorId = btn.getAttribute('data-factor-id');
+                const factorName = btn.getAttribute('data-factor-name');
+                window.showAddOptionModal(factorId, factorName);
+            });
+        });
+        
     } catch (e) {
         console.error("Error rendering score card:", e);
         contentArea.innerHTML = `<div class="alert alert-danger">Error loading score card configuration: ${e.message}</div>`;
@@ -189,6 +208,8 @@ window.saveOption = async () => {
 };
 
 // Register module
+window.renderScoreCard = renderScoreCard;
+// Keep for compatibility if needed
 window.modules = window.modules || {};
 window.modules['score-card'] = renderScoreCard;
 })();

@@ -4,6 +4,7 @@
 
 async function renderMove() {
     const contentArea = document.getElementById('main-area');
+    if (window.setHelpSection) window.setHelpSection('help-move');
     const [workloadsRes, runbooksRes] = await Promise.all([
         fetch('/map/workloads'),
         fetch('/move/runbooks')

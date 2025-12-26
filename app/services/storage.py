@@ -1305,7 +1305,7 @@ class DatabaseStorage:
                     "name": f.name,
                     "weight": f.weight,
                     "description": f.description,
-                    "options": [{"id": o.id, "name": o.name, "score": o.score} for o in f.options]
+                    "options": [{"id": o.id, "factor_id": o.factor_id, "name": o.name, "score": o.score} for o in f.options]
                 })
             return result
 

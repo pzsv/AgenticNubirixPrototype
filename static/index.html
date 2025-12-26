@@ -103,9 +103,9 @@
                         <small class="text-uppercase text-muted fw-bold">Admin Panel</small>
                     </div>
                     <ul class="list-unstyled">
-                        <li><a href="#"><i class="bi bi-kanban me-2"></i> <span>Project Management</span></a></li>
-                        <li><a href="#"><i class="bi bi-people me-2"></i> <span>User Management</span></a></li>
-                        <li><a href="#"><i class="bi bi-exclamation-triangle me-2"></i> <span>Process Failures</span></a></li>
+                        <li><a href="#" data-module="admin-project"><i class="bi bi-kanban me-2"></i> <span>Project Management</span></a></li>
+                        <li><a href="#" data-module="admin-users"><i class="bi bi-people me-2"></i> <span>User Management</span></a></li>
+                        <li><a href="#" data-module="admin-failures"><i class="bi bi-exclamation-triangle me-2"></i> <span>Process Failures</span></a></li>
                     </ul>
                 </div>
 
@@ -137,6 +137,9 @@
                         <!-- Logo removed from here as per requirement -->
                     </div>
                     <div class="d-flex align-items-center">
+                        <a href="#" id="contextual-help-link" class="me-3 text-dark" title="Page Help">
+                            <i class="bi bi-question-circle fs-5"></i>
+                        </a>
                         <div class="position-relative me-3">
                             <i class="bi bi-bell fs-5"></i>
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.5rem;">

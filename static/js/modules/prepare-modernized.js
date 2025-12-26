@@ -57,6 +57,11 @@ async function renderPrepareStep() {
     const stepArea = document.getElementById('prepare-modern-content');
     if (!stepArea) return;
 
+    // Update granular help section
+    if (window.setHelpSection) {
+        window.setHelpSection(`help-prepare-${prepareState.currentStep}`);
+    }
+
     // Update stepper active state
     document.querySelectorAll('.stepper .step').forEach(el => {
         const text = el.textContent.trim().toLowerCase();

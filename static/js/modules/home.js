@@ -4,6 +4,9 @@
 
 function renderHome(context = 'modern') {
     const contentArea = document.getElementById('main-area');
+    
+    if (window.setHelpSection) window.setHelpSection('help-home');
+
     const prepareModule = context === 'old' ? 'prepare-old' : 'prepare';
     const prepareDesc = context === 'old' 
         ? 'Legacy data discovery and ingestion workflow.' 
