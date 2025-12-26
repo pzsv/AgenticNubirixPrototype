@@ -1,7 +1,8 @@
 // --- Module: Prepare (Modernized) ---
 let prepareState = {
     currentStep: 'overview',
-    discoverSubview: 'sources'
+    discoverSubview: 'sources',
+    mappingSubview: 'sources'
 };
 
 async function renderPrepare() {
@@ -18,12 +19,8 @@ async function renderPrepare() {
                     <i class="bi bi-search me-1"></i> Discover
                 </div>
                 <div class="step-line"></div>
-                <div class="step ${prepareState.currentStep === 'stage' ? 'active' : ''}" onclick="window.setPrepareStep('stage')">
-                    <i class="bi bi-layers me-1"></i> Stage & Review
-                </div>
-                <div class="step-line"></div>
-                <div class="step ${prepareState.currentStep === 'structure' ? 'active' : ''}" onclick="window.setPrepareStep('structure')">
-                    <i class="bi bi-diagram-3 me-1"></i> Structure
+                <div class="step ${prepareState.currentStep === 'mapping' ? 'active' : ''}" onclick="window.setPrepareStep('mapping')">
+                    <i class="bi bi-diagram-3 me-1"></i> Mapping
                 </div>
                 <div class="step-line"></div>
                 <div class="step ${prepareState.currentStep === 'transform' ? 'active' : ''}" onclick="window.setPrepareStep('transform')">
@@ -48,7 +45,16 @@ async function renderPrepare() {
 
 window.setPrepareStep = (step) => {
     prepareState.currentStep = step;
+    if (step === 'mapping' && !prepareState.mappingSubview) {
+        prepareState.mappingSubview = 'sources';
+    }
     renderPrepareStep();
+};
+
+window.goToMapping = (sourceName) => {
+    prepareState.mappingSource = sourceName;
+    prepareState.mappingSubview = 'fields';
+    window.setPrepareStep('mapping');
 };
 
 async function renderPrepareStep() {
@@ -62,8 +68,7 @@ async function renderPrepareStep() {
         let active = false;
         if (step === 'overview' && text.includes('overview')) active = true;
         else if (step === 'discover' && text.includes('discover')) active = true;
-        else if (step === 'stage' && text.includes('stage')) active = true;
-        else if (step === 'structure' && text.includes('structure')) active = true;
+        else if (step === 'mapping' && text.includes('mapping')) active = true;
         else if (step === 'transform' && text.includes('transform')) active = true;
         else if (step === 'consolidate' && text.includes('consolidate')) active = true;
         else if (step === 'publish' && text.includes('publish')) active = true;
@@ -78,11 +83,12 @@ async function renderPrepareStep() {
         case 'discover':
             await renderPrepareDiscover(stepArea);
             break;
-        case 'stage':
-            renderPrepareStage(stepArea);
-            break;
-        case 'structure':
-            renderPrepareStructure(stepArea);
+        case 'mapping':
+            if (prepareState.mappingSubview === 'fields') {
+                await renderMappingFields(stepArea);
+            } else {
+                await renderMappingSources(stepArea);
+            }
             break;
         case 'transform':
             stepArea.innerHTML = '<h4>Transform</h4><p class="text-muted">Apply normalization and data cleaning rules.</p>';
@@ -96,75 +102,101 @@ async function renderPrepareStep() {
     }
 }
 
-function renderPrepareStage(container) {
+async function renderMappingSources(container) {
+    container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
+    
+    const response = await fetch('/prepare/data-sources');
+    const sources = await response.json();
+
     container.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="mb-0">Stage & Review</h4>
+            <h4 class="mb-0">Mapping</h4>
             <div class="d-flex gap-2">
                 <button class="btn btn-outline-dark btn-sm">Filter</button>
                 <button class="btn btn-primary btn-sm">Verify All Ready</button>
             </div>
         </div>
         
-        <div class="card shadow-sm">
-            <div class="card-body p-0">
-                <table class="table table-hover mb-0 small">
-                    <thead class="bg-light">
-                        <tr>
-                            <th>Item Name</th>
-                            <th>Source</th>
-                            <th>Type</th>
-                            <th>Quality</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>APP-SERVER-01</strong></td>
-                            <td class="text-muted">Excel Upload</td>
-                            <td>Compute</td>
-                            <td><div class="progress" style="height: 6px; width: 60px;"><div class="progress-bar bg-success" style="width: 95%"></div></div></td>
-                            <td><span class="badge bg-success">Ready</span></td>
-                            <td><button class="btn btn-link btn-sm p-0">Review</button></td>
-                        </tr>
-                        <tr>
-                            <td><strong>DB-PROD-02</strong></td>
-                            <td class="text-muted">CMDB Sync</td>
-                            <td>Database</td>
-                            <td><div class="progress" style="height: 6px; width: 60px;"><div class="progress-bar bg-warning" style="width: 65%"></div></div></td>
-                            <td><span class="badge bg-warning text-dark">Pending</span></td>
-                            <td><button class="btn btn-link btn-sm p-0">Review</button></td>
-                        </tr>
-                        <tr>
-                            <td><strong>WEB-CLUSTER-01</strong></td>
-                            <td class="text-muted">Excel Upload</td>
-                            <td>Compute</td>
-                            <td><div class="progress" style="height: 6px; width: 60px;"><div class="progress-bar bg-danger" style="width: 35%"></div></div></td>
-                            <td><span class="badge bg-danger">Conflict</span></td>
-                            <td><button class="btn btn-link btn-sm p-0">Resolve</button></td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div id="mapping-sources-container">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h6 class="fw-bold mb-0">Ingested Data Sources</h6>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0 small">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Source Name</th>
+                                <th>Type</th>
+                                <th>Worksheet/Data</th>
+                                <th>Quality</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${sources.map(src => `
+                                <tr>
+                                    <td>
+                                        <button class="btn btn-link btn-sm p-0 fw-bold text-decoration-none" onclick="window.viewDataSourceDetails('${src.id}', '${src.name}')">
+                                            ${src.name}
+                                        </button>
+                                    </td>
+                                    <td class="text-muted">${src.source_type}</td>
+                                    <td>${src.data_ingested || 'N/A'}</td>
+                                    <td>
+                                        <div class="progress" style="height: 6px; width: 60px;">
+                                            <div class="progress-bar ${src.rating === 'high' ? 'bg-success' : (src.rating === 'medium' ? 'bg-warning' : 'bg-danger')}" 
+                                                 style="width: ${src.rating === 'high' ? '95%' : (src.rating === 'medium' ? '70%' : '40%')}"></div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge ${src.status === 'Success' ? 'bg-success' : 'bg-warning text-dark'}">${src.status}</span></td>
+                                    <td>
+                                        <button class="btn btn-link btn-sm p-0 me-2" onclick="window.viewDataSourceDetails('${src.id}', '${src.name}')">Review</button>
+                                        <button class="btn btn-link btn-sm p-0" onclick="window.goToMapping('${src.name}')">Map Fields</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                            ${sources.length === 0 ? '<tr><td colspan="6" class="text-center py-4 text-muted">No data sources found.</td></tr>' : ''}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     `;
 }
 
-async function renderPrepareStructure(container) {
-    const [mappingsRes, entitiesRes] = await Promise.all([
+async function renderMappingFields(container) {
+    const [mappingsRes, entitiesRes, ddFieldsRes] = await Promise.all([
         fetch('/prepare/field-mappings'),
-        fetch('/data-dictionary/entities')
+        fetch('/data-entities'),
+        fetch('/data-dictionary/fields')
     ]);
     const mappings = await mappingsRes.json();
     const entities = await entitiesRes.json();
+    const ddFields = await ddFieldsRes.json();
+
+    // Group mappings by data source
+    const sources = [...new Set(mappings.map(m => m.data_source))];
+    const currentSource = prepareState.mappingSource || (sources.length > 0 ? sources[0] : null);
+
+    const filteredMappings = currentSource ? mappings.filter(m => m.data_source === currentSource) : [];
 
     container.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="mb-0">Structure & Map Fields</h4>
-            <div class="btn-group">
-                <button class="btn btn-outline-dark btn-sm">Save Profile</button>
-                <button class="btn btn-primary btn-sm">Apply Mappings</button>
+            <h4 class="mb-0">Field Mapping</h4>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-dark btn-sm" onclick="window.setMappingSubview('sources')">
+                    <i class="bi bi-arrow-left me-1"></i> Back to List
+                </button>
+                <select class="form-select form-select-sm" onchange="window.setMappingSource(this.value)">
+                    <option value="">Select Data Source...</option>
+                    ${sources.map(s => `<option value="${s}" ${s === currentSource ? 'selected' : ''}>${s}</option>`).join('')}
+                </select>
+                <div class="btn-group">
+                    <button class="btn btn-outline-dark btn-sm">Save Profile</button>
+                    <button class="btn btn-primary btn-sm">Apply Mappings</button>
+                </div>
             </div>
         </div>
         
@@ -175,10 +207,10 @@ async function renderPrepareStructure(container) {
                         <h6 class="fw-bold mb-3">Target Entities</h6>
                         <div class="list-group list-group-flush small">
                             ${entities.map(e => `
-                                <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-0">
-                                    <span>${e}</span>
-                                    <i class="bi bi-chevron-right text-muted"></i>
-                                </a>
+                                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span>${e.name}</span>
+                                    <span class="badge bg-light text-dark rounded-pill">${e.fields.length} fields</span>
+                                </div>
                             `).join('')}
                         </div>
                     </div>
@@ -193,28 +225,45 @@ async function renderPrepareStructure(container) {
                                     <th>Source Field</th>
                                     <th>Target Entity</th>
                                     <th>Target Field</th>
-                                    <th>Transform</th>
+                                    <th>Data Dictionary (Normalization)</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${mappings.slice(0, 10).map(m => `
+                                ${filteredMappings.map(m => {
+        const selectedEntity = entities.find(e => e.name === m.data_entity);
+        const availableFields = selectedEntity ? selectedEntity.fields : [];
+
+        return `
                                     <tr>
-                                        <td>${m.source_field}</td>
+                                        <td class="fw-bold">${m.source_field}</td>
                                         <td>
-                                            <select class="form-select form-select-sm" style="font-size: 0.75rem;">
-                                                <option>${m.data_entity || 'None'}</option>
+                                            <select class="form-select form-select-sm" style="font-size: 0.75rem;" 
+                                                onchange="window.updateMappingModern('${m.id}', {data_entity: this.value, target_field: null})">
+                                                <option value="">None</option>
+                                                ${entities.map(e => `<option value="${e.name}" ${m.data_entity === e.name ? 'selected' : ''}>${e.name}</option>`).join('')}
                                             </select>
                                         </td>
                                         <td>
-                                            <select class="form-select form-select-sm" style="font-size: 0.75rem;">
-                                                <option>${m.target_field || 'None'}</option>
+                                            <select class="form-select form-select-sm" style="font-size: 0.75rem;" 
+                                                ${!m.data_entity ? 'disabled' : ''}
+                                                onchange="window.updateMappingModern('${m.id}', {target_field: this.value, status: 'Resolved'})">
+                                                <option value="">None</option>
+                                                ${availableFields.map(f => `<option value="${f.name}" ${m.target_field === f.name ? 'selected' : ''}>${f.name}</option>`).join('')}
                                             </select>
                                         </td>
-                                        <td><span class="text-muted italic">None</span></td>
+                                        <td>
+                                            <select class="form-select form-select-sm" style="font-size: 0.75rem;"
+                                                onchange="window.updateMappingModern('${m.id}', {data_dictionary_field_id: this.value})">
+                                                <option value="">No Normalization</option>
+                                                ${ddFields.map(df => `<option value="${df.id}" ${m.data_dictionary_field_id === df.id ? 'selected' : ''}>${df.entity} - ${df.name}</option>`).join('')}
+                                            </select>
+                                        </td>
                                         <td><span class="badge ${m.status === 'Resolved' ? 'bg-success' : 'bg-warning text-dark'}">${m.status}</span></td>
                                     </tr>
-                                `).join('')}
+                                    `;
+    }).join('')}
+                                ${filteredMappings.length === 0 ? '<tr><td colspan="5" class="text-center py-4 text-muted">Select a data source or no fields found.</td></tr>' : ''}
                             </tbody>
                         </table>
                     </div>
@@ -223,6 +272,25 @@ async function renderPrepareStructure(container) {
         </div>
     `;
 }
+
+window.setMappingSource = (source) => {
+    prepareState.mappingSource = source;
+    renderPrepareStep();
+};
+
+window.setMappingSubview = (subview) => {
+    prepareState.mappingSubview = subview;
+    renderPrepareStep();
+};
+
+window.updateMappingModern = async (id, updates) => {
+    await fetch(`/prepare/field-mappings/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+    });
+    renderPrepareStep();
+};
 
 function renderPrepareModernOverview(container) {
     container.innerHTML = `
@@ -313,7 +381,7 @@ function renderPrepareModernOverview(container) {
                                     <div class="text-muted" style="font-size: 0.75rem;">Source overlap in CMDB & Excel</div>
                                 </div>
                             </li>
-                            <li class="mb-3 d-flex align-items-start">
+                            <li class="mb-3 d-flex align-items-start" style="cursor: pointer;" onclick="window.goToMapping()">
                                 <i class="bi bi-diagram-3-fill text-primary me-2"></i>
                                 <div>
                                     <div class="fw-bold small">Map 45 Fields</div>
@@ -438,7 +506,11 @@ async function renderActiveSources(container) {
                         <tbody>
                             ${sources.map(src => `
                                 <tr>
-                                    <td><strong>${src.name}</strong></td>
+                                    <td>
+                                        <button class="btn btn-link btn-sm p-0 fw-bold text-decoration-none" onclick="window.viewDataSourceDetails('${src.id}', '${src.name}')">
+                                            ${src.name}
+                                        </button>
+                                    </td>
                                     <td><span class="badge bg-light text-dark border font-monospace">${src.source_type}</span></td>
                                     <td>${src.data_ingested || 'N/A'}</td>
                                     <td>
@@ -625,4 +697,78 @@ window.viewScanResults = async (scanId) => {
     `;
 }
 
+window.viewDataSourceDetails = async (sourceId, sourceName) => {
+    let container = document.getElementById('mapping-sources-container');
+    if (!container) {
+        container = document.getElementById('data-sources-container');
+    }
+    
+    if (!container) return;
+    
+    container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
+    
+    const response = await fetch(`/prepare/data-sources/${sourceId}/discovered-data`);
+    const entities = await response.json();
+    
+    if (entities.length === 0) {
+        container.innerHTML = `
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0">Discovered Data: ${sourceName}</h6>
+                    <button class="btn btn-outline-dark btn-sm" onclick="window.renderPrepareStep()">Back to List</button>
+                </div>
+                <div class="card-body py-5 text-center text-muted">
+                    No discovered data records found for this source.
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    // Get all unique field names for the table header
+    const allFieldNames = new Set();
+    entities.forEach(e => {
+        e.fields.forEach(f => allFieldNames.add(f.field_name));
+    });
+    const fieldNames = Array.from(allFieldNames);
+
+    container.innerHTML = `
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0">Discovered Data: ${sourceName}</h6>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-light text-dark rounded-pill">${entities.length} records</span>
+                    <button class="btn btn-outline-primary btn-sm" onclick="window.goToMapping('${sourceName}')">Map Fields</button>
+                    <button class="btn btn-outline-dark btn-sm" onclick="window.renderPrepareStep()">Back to List</button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 small" style="min-width: 800px;">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Entity ID</th>
+                                ${fieldNames.map(f => `<th>${f}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${entities.map(e => {
+                                const fieldMap = {};
+                                e.fields.forEach(f => fieldMap[f.field_name] = f.field_value);
+                                return `
+                                    <tr>
+                                        <td><code class="text-muted" style="font-size: 0.7rem;">${e.id.substring(0,8)}</code></td>
+                                        ${fieldNames.map(f => `<td>${fieldMap[f] || '-'}</td>`).join('')}
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+window.renderPrepareStep = renderPrepareStep;
 window.renderPrepare = renderPrepare;

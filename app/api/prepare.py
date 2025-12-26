@@ -12,16 +12,16 @@ router = APIRouter(prefix="/prepare", tags=["Prepare"])
 async def create_ci(ci: ConfigurationItemCreate):
     ci_id = storage.add_ci(ci.model_dump())
     
-    # Create Raw Data record for manual ingestion
-    raw_entity_id = storage.add_raw_data_entity({
+    # Create Discovered Data record for manual ingestion
+    discovered_entity_id = storage.add_discovered_data_entity({
         "source_type": "manual",
         "user": "admin", # Default user for now
         "data_entity_name": ci.type.value if hasattr(ci.type, 'value') else str(ci.type)
     })
     
     # Add name as a field
-    storage.add_raw_data_entity_field({
-        "raw_data_entity_id": raw_entity_id,
+    storage.add_discovered_data_field({
+        "discovered_data_entity_id": discovered_entity_id,
         "field_name": "name",
         "field_value": ci.name,
         "rating": "manual"
@@ -29,8 +29,8 @@ async def create_ci(ci: ConfigurationItemCreate):
     
     # Add description as a field
     if ci.description:
-        storage.add_raw_data_entity_field({
-            "raw_data_entity_id": raw_entity_id,
+        storage.add_discovered_data_field({
+            "discovered_data_entity_id": discovered_entity_id,
             "field_name": "description",
             "field_value": ci.description,
             "rating": "manual"
@@ -38,8 +38,8 @@ async def create_ci(ci: ConfigurationItemCreate):
         
     # Add properties as fields
     for key, value in ci.properties.items():
-        storage.add_raw_data_entity_field({
-            "raw_data_entity_id": raw_entity_id,
+        storage.add_discovered_data_field({
+            "discovered_data_entity_id": discovered_entity_id,
             "field_name": key,
             "field_value": str(value),
             "rating": "manual"
@@ -54,6 +54,10 @@ async def list_cis():
 @router.get("/data-sources")
 async def list_data_sources():
     return storage.get_data_sources()
+
+@router.get("/data-sources/{source_id}/discovered-data")
+async def get_data_source_discovered_data(source_id: str):
+    return storage.get_discovered_data_entities(data_source_id=source_id)
 
 @router.get("/datasets")
 async def list_datasets():
@@ -113,17 +117,18 @@ async def upload_dataset(
                 "process": True
             })
 
-        # Create Raw Data Records for each row in the uploaded file
+        # Create Discovered Data Records for each row in the uploaded file
         # Limit to first 100 rows to avoid excessive data in prototype
         for _, row in df.head(100).iterrows():
-            raw_entity_id = storage.add_raw_data_entity({
+            discovered_entity_id = storage.add_discovered_data_entity({
                 "source_type": "file",
                 "user": "admin",
-                "data_entity_name": worksheet
+                "data_entity_name": worksheet,
+                "data_source_id": ds_id
             })
             for col in df.columns:
-                storage.add_raw_data_entity_field({
-                    "raw_data_entity_id": raw_entity_id,
+                storage.add_discovered_data_field({
+                    "discovered_data_entity_id": discovered_entity_id,
                     "field_name": str(col),
                     "field_value": str(row[col]),
                     "rating": rating
@@ -181,21 +186,21 @@ async def run_scan(scan_id: str):
         "rating": "high"
     })
     
-    # Also create Raw Data Entities for the discovered items
+    # Also create Discovered Data Entities for the discovered items
     for item in results:
-        raw_entity_id = storage.add_raw_data_entity({
+        discovered_entity_id = storage.add_discovered_data_entity({
             "source_type": "network_scan",
             "user": "system",
             "data_entity_name": item["type"]
         })
-        storage.add_raw_data_entity_field({
-            "raw_data_entity_id": raw_entity_id,
+        storage.add_discovered_data_field({
+            "discovered_data_entity_id": discovered_entity_id,
             "field_name": "hostname",
             "field_value": item["hostname"],
             "rating": "high"
         })
-        storage.add_raw_data_entity_field({
-            "raw_data_entity_id": raw_entity_id,
+        storage.add_discovered_data_field({
+            "discovered_data_entity_id": discovered_entity_id,
             "field_name": "ip",
             "field_value": item["ip"],
             "rating": "high"
@@ -225,15 +230,15 @@ async def ingest_cis(file: UploadFile = File(...)):
             }
             storage.add_ci(ci_data)
             
-            # Create Raw Data record
-            raw_entity_id = storage.add_raw_data_entity({
+            # Create Discovered Data record
+            discovered_entity_id = storage.add_discovered_data_entity({
                 "source_type": "file",
                 "user": "admin",
                 "data_entity_name": str(ci_data["type"])
             })
             for col in df.columns:
-                storage.add_raw_data_entity_field({
-                    "raw_data_entity_id": raw_entity_id,
+                storage.add_discovered_data_field({
+                    "discovered_data_entity_id": discovered_entity_id,
                     "field_name": str(col),
                     "field_value": str(row[col]),
                     "rating": "high"

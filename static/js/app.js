@@ -29,6 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
         contentArea.innerHTML = '<div class="text-center mt-5"><div class="spinner-border" role="status"></div><p>Loading...</p></div>';
         
         switch(module) {
+            case 'discovered-data':
+                if (window.renderDiscoveredDataEntities) await window.renderDiscoveredDataEntities();
+                break;
             case 'help':
                 if (window.renderHelp) window.renderHelp();
                 break;
@@ -64,9 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'data-entities':
                 if (window.renderDataEntities) await window.renderDataEntities();
-                break;
-            case 'raw-data':
-                if (window.renderRawDataEntities) await window.renderRawDataEntities();
                 break;
             default:
                 contentArea.innerHTML = '<h2>Module not found</h2>';

@@ -14,8 +14,8 @@ class DatabaseStorage:
                 self._seed_data_dictionary(db)
             if db.query(models.DataSource).count() == 0:
                 self._seed_data_sources(db)
-            if db.query(models.RawDataEntity).count() == 0:
-                self._seed_raw_data(db)
+            if db.query(models.DiscoveredDataEntity).count() == 0:
+                self._seed_discovered_data(db)
             if db.query(models.NetworkScan).count() == 0:
                 self._seed_network_scans(db)
             if db.query(models.Environment).count() == 0:
@@ -138,13 +138,14 @@ class DatabaseStorage:
         for s in scans:
             self.add_network_scan(s, db)
 
-    def _seed_raw_data(self, db: Session):
-        # Sample raw data for manual ingestion
+    def _seed_discovered_data(self, db: Session):
+        # Sample discovered data for manual ingestion
         entities = [
             {
                 "source_type": "manual",
                 "user": "admin",
                 "data_entity_name": "server",
+                "data_source_id": "ds-manual-01",
                 "fields": {
                     "name": "PROD-WEB-01",
                     "OS": "Ubuntu 22.04",
@@ -156,6 +157,7 @@ class DatabaseStorage:
                 "source_type": "manual",
                 "user": "peti",
                 "data_entity_name": "database",
+                "data_source_id": "ds-manual-01",
                 "fields": {
                     "name": "CUST-DB-01",
                     "Technology": "PostgreSQL",
@@ -164,12 +166,13 @@ class DatabaseStorage:
             }
         ]
 
-        # Sample raw data for file ingestion
+        # Sample discovered data for file ingestion
         file_entities = [
             {
                 "source_type": "file",
                 "user": "admin",
                 "data_entity_name": "Server List",
+                "data_source_id": "ds-excel-01",
                 "rating": "high",
                 "rows": [
                     {"Server Name": "SRV-APPS-01", "Environment": "PROD", "IP Address": "10.0.1.10"},
@@ -180,14 +183,15 @@ class DatabaseStorage:
         ]
 
         for e in entities:
-            eid = self.add_raw_data_entity({
+            eid = self.add_discovered_data_entity({
                 "source_type": e["source_type"],
                 "user": e["user"],
-                "data_entity_name": e["data_entity_name"]
+                "data_entity_name": e["data_entity_name"],
+                "data_source_id": e.get("data_source_id")
             }, db)
             for k, v in e["fields"].items():
-                self.add_raw_data_entity_field({
-                    "raw_data_entity_id": eid,
+                self.add_discovered_data_field({
+                    "discovered_data_entity_id": eid,
                     "field_name": k,
                     "field_value": v,
                     "rating": "manual"
@@ -195,14 +199,15 @@ class DatabaseStorage:
 
         for fe in file_entities:
             for row in fe["rows"]:
-                eid = self.add_raw_data_entity({
+                eid = self.add_discovered_data_entity({
                     "source_type": fe["source_type"],
                     "user": fe["user"],
-                    "data_entity_name": fe["data_entity_name"]
+                    "data_entity_name": fe["data_entity_name"],
+                    "data_source_id": fe.get("data_source_id")
                 }, db)
                 for k, v in row.items():
-                    self.add_raw_data_entity_field({
-                        "raw_data_entity_id": eid,
+                    self.add_discovered_data_field({
+                        "discovered_data_entity_id": eid,
                         "field_name": k,
                         "field_value": v,
                         "rating": fe["rating"]
@@ -211,6 +216,7 @@ class DatabaseStorage:
     def _seed_data_sources(self, db: Session):
         # Sample data sources of various types
         self.add_data_source({
+            "id": "ds-excel-01",
             "name": "Server_Inventory_v2",
             "source_type": "Excel",
             "data_ingested": "Server Inventory",
@@ -223,6 +229,7 @@ class DatabaseStorage:
             "rating": "high"
         }, db)
         self.add_data_source({
+            "id": "ds-cmdb-01",
             "name": "ServiceNow_PROD",
             "source_type": "CMDB",
             "data_ingested": "Full CI Export",
@@ -247,6 +254,7 @@ class DatabaseStorage:
             "rating": "medium"
         }, db)
         self.add_data_source({
+            "id": "ds-manual-01",
             "name": "Manual Entry",
             "source_type": "Manual",
             "data_ingested": "Miscellaneous Assets",
@@ -725,6 +733,7 @@ class DatabaseStorage:
             worksheet=mapping_data["worksheet"],
             data_entity=mapping_data.get("data_entity"),
             target_field=mapping_data.get("target_field"),
+            data_dictionary_field_id=mapping_data.get("data_dictionary_field_id"),
             status=mapping_data.get("status", "Pending"),
             process=mapping_data.get("process", True)
         )
@@ -748,6 +757,7 @@ class DatabaseStorage:
                     "worksheet": m.worksheet,
                     "data_entity": m.data_entity,
                     "target_field": m.target_field,
+                    "data_dictionary_field_id": m.data_dictionary_field_id,
                     "status": m.status,
                     "process": m.process
                 } for m in mappings
@@ -904,15 +914,16 @@ class DatabaseStorage:
             db.commit()
             return True
 
-    def add_raw_data_entity(self, entity_data: Dict[str, Any], db: Optional[Session] = None) -> str:
+    def add_discovered_data_entity(self, entity_data: Dict[str, Any], db: Optional[Session] = None) -> str:
         entity_id = entity_data.get("id") or str(uuid.uuid4())
         created_time = entity_data.get("created_time") or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        db_entity = models.RawDataEntity(
+        db_entity = models.DiscoveredDataEntity(
             id=entity_id,
             created_time=created_time,
             source_type=entity_data["source_type"],
             user=entity_data["user"],
-            data_entity_name=entity_data["data_entity_name"]
+            data_entity_name=entity_data["data_entity_name"],
+            data_source_id=entity_data.get("data_source_id")
         )
         if db:
             db.add(db_entity)
@@ -923,9 +934,12 @@ class DatabaseStorage:
                 db.commit()
         return entity_id
 
-    def get_raw_data_entities(self) -> List[Dict[str, Any]]:
+    def get_discovered_data_entities(self, data_source_id: Optional[str] = None) -> List[Dict[str, Any]]:
         with SessionLocal() as db:
-            entities = db.query(models.RawDataEntity).all()
+            query = db.query(models.DiscoveredDataEntity)
+            if data_source_id:
+                query = query.filter(models.DiscoveredDataEntity.data_source_id == data_source_id)
+            entities = query.all()
             return [
                 {
                     "id": e.id,
@@ -933,11 +947,12 @@ class DatabaseStorage:
                     "source_type": e.source_type,
                     "user": e.user,
                     "data_entity_name": e.data_entity_name,
+                    "data_source_id": e.data_source_id,
                     "fields": [
                         {
                             "id": f.id, 
                             "created_time": f.created_time,
-                            "raw_data_entity_id": f.raw_data_entity_id,
+                            "discovered_data_entity_id": f.discovered_data_entity_id,
                             "field_name": f.field_name,
                             "field_value": f.field_value,
                             "rating": f.rating
@@ -947,9 +962,9 @@ class DatabaseStorage:
                 } for e in entities
             ]
 
-    def get_raw_data_entity_by_id(self, entity_id: str) -> Optional[Dict[str, Any]]:
+    def get_discovered_data_entity_by_id(self, entity_id: str) -> Optional[Dict[str, Any]]:
         with SessionLocal() as db:
-            e = db.query(models.RawDataEntity).filter(models.RawDataEntity.id == entity_id).first()
+            e = db.query(models.DiscoveredDataEntity).filter(models.DiscoveredDataEntity.id == entity_id).first()
             if e:
                 return {
                     "id": e.id,
@@ -957,11 +972,12 @@ class DatabaseStorage:
                     "source_type": e.source_type,
                     "user": e.user,
                     "data_entity_name": e.data_entity_name,
+                    "data_source_id": e.data_source_id,
                     "fields": [
                         {
                             "id": f.id, 
                             "created_time": f.created_time,
-                            "raw_data_entity_id": f.raw_data_entity_id,
+                            "discovered_data_entity_id": f.discovered_data_entity_id,
                             "field_name": f.field_name,
                             "field_value": f.field_value,
                             "rating": f.rating
@@ -971,22 +987,22 @@ class DatabaseStorage:
                 }
             return None
 
-    def delete_raw_data_entity(self, entity_id: str) -> bool:
+    def delete_discovered_data_entity(self, entity_id: str) -> bool:
         with SessionLocal() as db:
-            db_entity = db.query(models.RawDataEntity).filter(models.RawDataEntity.id == entity_id).first()
+            db_entity = db.query(models.DiscoveredDataEntity).filter(models.DiscoveredDataEntity.id == entity_id).first()
             if not db_entity:
                 return False
             db.delete(db_entity)
             db.commit()
             return True
 
-    def add_raw_data_entity_field(self, field_data: Dict[str, Any], db: Optional[Session] = None) -> str:
+    def add_discovered_data_field(self, field_data: Dict[str, Any], db: Optional[Session] = None) -> str:
         field_id = field_data.get("id") or str(uuid.uuid4())
         created_time = field_data.get("created_time") or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        db_field = models.RawDataEntityField(
+        db_field = models.DiscoveredDataField(
             id=field_id,
             created_time=created_time,
-            raw_data_entity_id=field_data["raw_data_entity_id"],
+            discovered_data_entity_id=field_data["discovered_data_entity_id"],
             field_name=field_data["field_name"],
             field_value=str(field_data.get("field_value", "")),
             rating=field_data.get("rating")
@@ -1000,14 +1016,14 @@ class DatabaseStorage:
                 db.commit()
         return field_id
 
-    def get_raw_data_entity_fields(self, entity_id: str) -> List[Dict[str, Any]]:
+    def get_discovered_data_fields(self, entity_id: str) -> List[Dict[str, Any]]:
         with SessionLocal() as db:
-            fields = db.query(models.RawDataEntityField).filter(models.RawDataEntityField.raw_data_entity_id == entity_id).all()
+            fields = db.query(models.DiscoveredDataField).filter(models.DiscoveredDataField.discovered_data_entity_id == entity_id).all()
             return [
                 {
                     "id": f.id,
                     "created_time": f.created_time,
-                    "raw_data_entity_id": f.raw_data_entity_id,
+                    "discovered_data_entity_id": f.discovered_data_entity_id,
                     "field_name": f.field_name,
                     "field_value": f.field_value,
                     "rating": f.rating

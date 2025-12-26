@@ -1,30 +1,30 @@
 from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 
-class RawDataEntityFieldBase(BaseModel):
+class DiscoveredDataFieldBase(BaseModel):
     field_name: str
     field_value: str
     rating: Optional[str] = None
     created_time: Optional[str] = None
 
-class RawDataEntityFieldCreate(RawDataEntityFieldBase):
-    raw_data_entity_id: str
+class DiscoveredDataFieldCreate(DiscoveredDataFieldBase):
+    discovered_data_entity_id: str
 
-class RawDataEntityField(RawDataEntityFieldBase):
+class DiscoveredDataField(DiscoveredDataFieldBase):
     id: str
-    raw_data_entity_id: str
+    discovered_data_entity_id: str
     model_config = ConfigDict(from_attributes=True)
 
-class RawDataEntityBase(BaseModel):
+class DiscoveredDataEntityBase(BaseModel):
     source_type: str
     user: str
     data_entity_name: str
     created_time: Optional[str] = None
 
-class RawDataEntityCreate(RawDataEntityBase):
+class DiscoveredDataEntityCreate(DiscoveredDataEntityBase):
     pass
 
-class RawDataEntity(RawDataEntityBase):
+class DiscoveredDataEntity(DiscoveredDataEntityBase):
     id: str
-    fields: List[RawDataEntityField] = []
+    fields: List[DiscoveredDataField] = []
     model_config = ConfigDict(from_attributes=True)

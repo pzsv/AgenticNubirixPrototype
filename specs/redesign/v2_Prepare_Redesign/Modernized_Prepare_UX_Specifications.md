@@ -79,8 +79,7 @@ CONSOLIDATE & PUBLISH
 **Top Navigation** (Preserved from original, updated labels):
 - Overview (new dashboard view)
 - Discover (renamed from Ingest)
-- Stage & Review (new)
-- Structure (renamed from Map Fields)
+- Mapping (replaces Stage & Review and Structure)
 - Transform (renamed from Normalise)
 - Consolidate (renamed from Aggregate)
 - Publish (preserved)

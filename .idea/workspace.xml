@@ -4,7 +4,24 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dd3a8f81-e856-4b78-92eb-8eb6000a4067" name="Changes" comment="Created CONFIGURATION menu sections and Environments and Move Principles menu options within" />
+    <list default="true" id="dd3a8f81-e856-4b78-92eb-8eb6000a4067" name="Changes" comment="Help Center added">
+      <change afterPath="$PROJECT_DIR$/app/api/discovered_data.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/schemas/discovered_data.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/static/js/modules/discovered-data.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/prepare.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/prepare.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/raw_data.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/models/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/raw_data.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/storage.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/storage.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prototype.db" beforeDir="false" afterPath="$PROJECT_DIR$/prototype.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/specs/redesign/v2_Prepare_Redesign/Modernized_Prepare_UX_Specifications.md" beforeDir="false" afterPath="$PROJECT_DIR$/specs/redesign/v2_Prepare_Redesign/Modernized_Prepare_UX_Specifications.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/static/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/app.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/prepare-modernized.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/prepare-modernized.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/raw-data.js" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -78,7 +95,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1766544897662</updated>
-      <workItem from="1766544898713" duration="7677000" />
+      <workItem from="1766544898713" duration="18227000" />
     </task>
     <task id="LOCAL-00001" summary="app.js split between modules and features">
       <option name="closed" value="true" />
@@ -136,7 +153,15 @@
       <option name="project" value="LOCAL" />
       <updated>1766553043197</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Help Center added">
+      <option name="closed" value="true" />
+      <created>1766553681333</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1766553681333</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -150,10 +175,11 @@
     <MESSAGE value="Graph mini-maps and controls added to Map" />
     <MESSAGE value="Configuration yaml and utility added" />
     <MESSAGE value="Created CONFIGURATION menu sections and Environments and Move Principles menu options within" />
-    <option name="LAST_COMMIT_MESSAGE" value="Created CONFIGURATION menu sections and Environments and Move Principles menu options within" />
+    <MESSAGE value="Help Center added" />
+    <option name="LAST_COMMIT_MESSAGE" value="Help Center added" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/AgenticNubirixPrototype$main.coverage" NAME="main Coverage Results" MODIFIED="1766552500141" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/AgenticNubirixPrototype$main.coverage" NAME="main Coverage Results" MODIFIED="1766711372355" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/AgenticNubirixPrototype$data_entities.coverage" NAME="data_entities Coverage Results" MODIFIED="1766552369441" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/app/api" />
   </component>
 </project>

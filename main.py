@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from app.api import prepare, map as mapping, plan, move, evaluate, data_dictionary, data_entities, raw_data, environments, move_principles
+from app.api import prepare, map as mapping, plan, move, evaluate, data_dictionary, data_entities, discovered_data, environments, move_principles
 from app.config import settings
 import os
 
@@ -19,7 +19,7 @@ app.include_router(move.router)
 app.include_router(evaluate.router)
 app.include_router(data_dictionary.router)
 app.include_router(data_entities.router)
-app.include_router(raw_data.router)
+app.include_router(discovered_data.router)
 app.include_router(environments.router)
 app.include_router(move_principles.router)
 
