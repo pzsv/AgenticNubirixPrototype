@@ -37,6 +37,7 @@ async def api_status():
     return {
         "message": f"Welcome to the {settings.app.title}",
         "version": settings.app.version,
+        "version_content": settings.app.version_content,
         "root_url": settings.app.root_url,
         "description": settings.app.description,
         "modules": [

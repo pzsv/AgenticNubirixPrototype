@@ -7,6 +7,7 @@ class AppConfig(BaseModel):
     title: str
     description: str
     version: str
+    version_content: str
     root_url: str
     host: str
     port: int

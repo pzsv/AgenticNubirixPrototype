@@ -2,6 +2,7 @@ app:
   title: "Data Centre Migration Prototype"
   description: "A prototype for planning and executing data centre migrations."
   version: "0.1.0"
+  version_content: "Clean up project structure and add .gitignore"
   root_url: "http://localhost:8000"
   host: "0.0.0.0"
   port: 8000
