@@ -853,6 +853,7 @@ window.viewScanResults = async (scanId) => {
                             <th>IP Address</th>
                             <th>Hostname</th>
                             <th>Detected Type</th>
+                            <th>Protocols</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -862,6 +863,7 @@ window.viewScanResults = async (scanId) => {
                                 <td><code>${r.ip}</code></td>
                                 <td>${r.hostname}</td>
                                 <td><span class="badge bg-light text-dark border">${r.type}</span></td>
+                                <td><small class="text-muted">${r.protocols || 'ICMP, TCP/SNMP'}</small></td>
                                 <td><button class="btn btn-link btn-sm p-0">Details</button></td>
                             </tr>
                         `).join('')}

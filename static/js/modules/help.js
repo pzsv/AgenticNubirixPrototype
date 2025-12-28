@@ -24,6 +24,14 @@
                     content: 'You can use File Ingestion, Network Scans, CMDB Connect, or Manual Entry to bring data into the platform.'
                 },
                 {
+                    label: 'Network Scanning (Prototype)',
+                    content: 'In this prototype, Network Scans are simulated. The software uses a variety of discovery protocols including ICMP (Ping) for initial discovery, and then attempts more detailed interrogation via SNMP, SSH (for Linux), and WMI (for Windows) to collect hardware and software specifications.'
+                },
+                {
+                    label: 'Target Ranges',
+                    content: 'The scanner accepts standard CIDR notation (e.g., 192.168.1.0/24). If your range doesn\'t bring results, ensure it\'s a valid network range and that your assets are within that subnet.'
+                },
+                {
                     label: 'Filtering',
                     content: 'Use the method cards at the top to filter the active sources list by their ingestion type.'
                 }

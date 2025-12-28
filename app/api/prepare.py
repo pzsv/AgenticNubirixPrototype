@@ -7,6 +7,8 @@ import pandas as pd
 import io
 import json
 from datetime import datetime
+import ipaddress
+import asyncio
 
 router = APIRouter(prefix="/prepare", tags=["Prepare"])
 
@@ -126,12 +128,13 @@ async def upload_dataset(
 
             # Get all data dictionary fields for recommendations
             data_fields = storage.get_data_fields()
+            entities = storage.get_data_entities()
 
             # Generate initial field mappings for this worksheet
             for col in df.columns:
                 # Sample some unique values for recommendation engine
                 column_values = df[col].dropna().unique().tolist()[:50]
-                rec_entity, rec_field, rec_field_id = get_field_recommendation(str(col), column_values, data_fields)
+                rec_entity, rec_field, rec_field_id = get_field_recommendation(str(col), column_values, data_fields, entities)
 
                 storage.add_field_mapping({
                     "source_field": str(col),
@@ -193,12 +196,37 @@ async def run_scan(scan_id: str):
         "start_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     })
     
-    # Mock scan execution
-    results = [
-        {"ip": "192.168.1.10", "hostname": "WEB-SRV-01", "type": "server"},
-        {"ip": "192.168.1.11", "hostname": "WEB-SRV-02", "type": "server"},
-        {"ip": "192.168.1.20", "hostname": "DB-SRV-01", "type": "database"},
+    # Simulate scanning time
+    await asyncio.sleep(2)
+    
+    target = scan['target_range']
+    # Try to normalize target range
+    try:
+        if "/" in target and target.count(".") < 3:
+            parts = target.split("/")
+            ip_part = parts[0]
+            while ip_part.count(".") < 3:
+                ip_part += ".0"
+            target = ip_part + "/" + parts[1]
+        
+        network = ipaddress.ip_network(target, strict=False)
+    except Exception:
+        network = None
+
+    # Define mock results
+    all_mock_results = [
+        {"ip": "192.168.1.10", "hostname": "WEB-SRV-01", "type": "server", "protocols": "ICMP, TCP/80, TCP/443"},
+        {"ip": "192.168.1.11", "hostname": "WEB-SRV-02", "type": "server", "protocols": "ICMP, TCP/80, TCP/443"},
+        {"ip": "192.168.1.20", "hostname": "DB-SRV-01", "type": "database", "protocols": "ICMP, TCP/5432"},
+        {"ip": "10.0.1.10", "hostname": "SRV-APPS-01", "type": "server", "protocols": "ICMP, SSH, TCP/8080"},
+        {"ip": "10.0.1.50", "hostname": "GW-01", "type": "network_device", "protocols": "ICMP, SNMP, SSH"},
     ]
+    
+    results = []
+    if network:
+        for item in all_mock_results:
+            if ipaddress.ip_address(item["ip"]) in network:
+                results.append(item)
     
     storage.update_network_scan(scan_id, {
         "status": "Completed",
@@ -208,10 +236,10 @@ async def run_scan(scan_id: str):
     })
     
     # Also create/update Data Source entry for this scan
-    storage.add_data_source({
-        "name": f"Scan: {scan.name}",
+    ds_id = storage.add_data_source({
+        "name": f"Scan: {scan['name']}",
         "source_type": "Network Scan",
-        "data_ingested": f"Range: {scan.target_range}",
+        "data_ingested": f"Range: {scan['target_range']}",
         "last_sync": datetime.now().strftime("%b %d, %Y, %I:%M:%S %p"),
         "records": len(results),
         "sync_count": 1,
@@ -226,7 +254,8 @@ async def run_scan(scan_id: str):
         discovered_entity_id = storage.add_discovered_data_entity({
             "source_type": "network_scan",
             "user": "system",
-            "data_entity_name": item["type"]
+            "data_entity_name": item["type"],
+            "data_source_id": ds_id
         })
         storage.add_discovered_data_field({
             "discovered_data_entity_id": discovered_entity_id,
@@ -239,6 +268,12 @@ async def run_scan(scan_id: str):
             "field_name": "ip",
             "field_value": item["ip"],
             "rating": "high"
+        })
+        storage.add_discovered_data_field({
+            "discovered_data_entity_id": discovered_entity_id,
+            "field_name": "protocols_detected",
+            "field_value": item["protocols"],
+            "rating": "medium"
         })
 
     return storage.get_network_scan_by_id(scan_id)
