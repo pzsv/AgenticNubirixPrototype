@@ -2,7 +2,15 @@
 let prepareState = {
     currentStep: 'ingestion',
     ingestionSubview: 'sources',
-    standardisationSubview: 'sources'
+    ingestionTab: 'sources',
+    standardisationSubview: 'sources',
+    standardisationTab: 'sources',
+    ingestionFilters: {
+        file: true,
+        network: true,
+        cmdb: true,
+        manual: true
+    }
 };
 
 async function renderPrepare() {
@@ -50,6 +58,7 @@ window.setPrepareStep = (step) => {
 window.goToStandardisation = (sourceName) => {
     prepareState.standardisationSource = sourceName;
     prepareState.standardisationSubview = 'fields';
+    prepareState.standardisationTab = 'sources';
     window.setPrepareStep('standardisation');
 };
 
@@ -59,7 +68,13 @@ async function renderPrepareStep() {
 
     // Update granular help section
     if (window.setHelpSection) {
-        window.setHelpSection(`help-prepare-${prepareState.currentStep}`);
+        let section = `help-prepare-${prepareState.currentStep}`;
+        if (prepareState.currentStep === 'standardisation') {
+            section += `-${prepareState.standardisationTab || 'sources'}`;
+        } else if (prepareState.currentStep === 'ingestion') {
+            section += `-${prepareState.ingestionTab || 'sources'}`;
+        }
+        window.setHelpSection(section);
     }
 
     // Update stepper active state
@@ -80,12 +95,18 @@ async function renderPrepareStep() {
         case 'ingestion':
             await renderPrepareIngestion(stepArea);
             break;
+        case 'data-entities':
+            prepareState.currentStep = 'standardisation';
+            prepareState.standardisationTab = 'entities';
+            await renderStandardisation(stepArea);
+            break;
+        case 'data-dictionary':
+            prepareState.currentStep = 'standardisation';
+            prepareState.standardisationTab = 'dictionary';
+            await renderStandardisation(stepArea);
+            break;
         case 'standardisation':
-            if (prepareState.standardisationSubview === 'fields') {
-                await renderStandardisationFields(stepArea);
-            } else {
-                await renderStandardisationSources(stepArea);
-            }
+            await renderStandardisation(stepArea);
             break;
         case 'normalisation':
             renderPrepareNormalisation(stepArea);
@@ -96,6 +117,56 @@ async function renderPrepareStep() {
         case 'publish':
             renderPreparePublish(stepArea);
             break;
+    }
+}
+
+window.setStandardisationTab = (tab) => {
+    prepareState.standardisationTab = tab;
+    if (tab !== 'sources') {
+        prepareState.standardisationSubview = 'sources'; // Reset subview if switching away from sources
+    }
+    renderPrepareStep();
+};
+
+async function renderStandardisation(container) {
+    const tabs = [
+        { id: 'sources', label: 'Data Sources', icon: 'bi-database' },
+        { id: 'entities', label: 'Data Entities', icon: 'bi-diagram-2' },
+        { id: 'dictionary', label: 'Data Dictionary', icon: 'bi-book' },
+        { id: 'discovered', label: 'Discovered Data', icon: 'bi-file-earmark-text' }
+    ];
+    
+    const activeTab = prepareState.standardisationTab || 'sources';
+    
+    container.innerHTML = `
+        <div class="mb-4">
+            <ul class="nav nav-tabs" id="standardisation-tabs">
+                ${tabs.map(tab => `
+                    <li class="nav-item">
+                        <a class="nav-link ${activeTab === tab.id ? 'active fw-bold' : ''}" 
+                           href="#" onclick="window.setStandardisationTab('${tab.id}'); return false;">
+                            <i class="bi ${tab.icon} me-1"></i> ${tab.label}
+                        </a>
+                    </li>
+                `).join('')}
+            </ul>
+        </div>
+        <div id="standardisation-tab-content" class="mt-4"></div>
+    `;
+    
+    const tabContent = document.getElementById('standardisation-tab-content');
+    if (activeTab === 'sources') {
+        if (prepareState.standardisationSubview === 'fields') {
+            await renderStandardisationFields(tabContent);
+        } else {
+            await renderStandardisationSources(tabContent);
+        }
+    } else if (activeTab === 'entities') {
+        if (window.renderDataEntities) await window.renderDataEntities('', 'name', 'asc', 1, 'standardisation-tab-content');
+    } else if (activeTab === 'dictionary') {
+        if (window.renderDataDictionary) await window.renderDataDictionary('', '', 'standardisation-tab-content');
+    } else if (activeTab === 'discovered') {
+        if (window.renderDiscoveredDataEntities) await window.renderDiscoveredDataEntities('', 'created_time', 'desc', 1, 'standardisation-tab-content');
     }
 }
 
@@ -175,9 +246,9 @@ async function renderStandardisationFields(container) {
 
     // Group mappings by data source
     const sources = [...new Set(mappings.map(m => m.data_source))];
-    const currentSource = prepareState.standardisationSource || (sources.length > 0 ? sources[0] : null);
+    const currentSource = prepareState.standardisationSource || (sources.length > 0 ? sources[0] : 'all');
 
-    const filteredMappings = currentSource ? mappings.filter(m => m.data_source === currentSource) : [];
+    const filteredMappings = currentSource === 'all' ? mappings : mappings.filter(m => m.data_source === currentSource);
 
     container.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -187,7 +258,7 @@ async function renderStandardisationFields(container) {
                     <i class="bi bi-arrow-left me-1"></i> Back to List
                 </button>
                 <select class="form-select form-select-sm" onchange="window.setStandardisationSource(this.value)">
-                    <option value="">Select Data Source...</option>
+                    <option value="all" ${currentSource === 'all' ? 'selected' : ''}>All Data Sources</option>
                     ${sources.map(s => `<option value="${s}" ${s === currentSource ? 'selected' : ''}>${s}</option>`).join('')}
                 </select>
                 <div class="btn-group">
@@ -220,9 +291,10 @@ async function renderStandardisationFields(container) {
                             <thead class="bg-light">
                                 <tr>
                                     <th>Source Field</th>
+                                    <th>Worksheet</th>
                                     <th>Target Entity</th>
                                     <th>Target Field</th>
-                                    <th>Data Dictionary (Normalization)</th>
+                                    <th>Data Dictionary</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -234,6 +306,7 @@ async function renderStandardisationFields(container) {
         return `
                                     <tr>
                                         <td class="fw-bold">${m.source_field}</td>
+                                        <td class="text-muted small">${m.worksheet}</td>
                                         <td>
                                             <select class="form-select form-select-sm" style="font-size: 0.75rem;" 
                                                 onchange="window.updateStandardisationMapping('${m.id}', {data_entity: this.value, target_field: null})">
@@ -252,15 +325,24 @@ async function renderStandardisationFields(container) {
                                         <td>
                                             <select class="form-select form-select-sm" style="font-size: 0.75rem;"
                                                 onchange="window.updateStandardisationMapping('${m.id}', {data_dictionary_field_id: this.value})">
-                                                <option value="">No Normalization</option>
+                                                <option value="">None</option>
                                                 ${ddFields.map(df => `<option value="${df.id}" ${m.data_dictionary_field_id === df.id ? 'selected' : ''}>${df.entity} - ${df.name}</option>`).join('')}
                                             </select>
                                         </td>
-                                        <td><span class="badge ${m.status === 'Resolved' ? 'bg-success' : 'bg-warning text-dark'}">${m.status}</span></td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge ${m.status === 'Resolved' ? 'bg-success' : 'bg-warning text-dark'}">${m.status}</span>
+                                                ${m.status === 'Pending' && m.data_entity && m.target_field ? 
+                                                    `<button class="btn btn-link btn-sm p-0 ms-2" onclick="window.updateStandardisationMapping('${m.id}', {status: 'Resolved'})" title="Approve Recommendation">
+                                                        <i class="bi bi-check-circle text-success"></i>
+                                                    </button>` : ''
+                                                }
+                                            </div>
+                                        </td>
                                     </tr>
                                     `;
     }).join('')}
-                                ${filteredMappings.length === 0 ? '<tr><td colspan="5" class="text-center py-4 text-muted">Select a data source or no fields found.</td></tr>' : ''}
+                                ${filteredMappings.length === 0 ? '<tr><td colspan="6" class="text-center py-4 text-muted">Select a data source or no fields found.</td></tr>' : ''}
                             </tbody>
                         </table>
                     </div>
@@ -403,6 +485,7 @@ function renderPrepareModernOverview(container) {
 
 async function renderPrepareIngestion(container) {
     const activeSub = prepareState.ingestionSubview || 'overview';
+    const activeTab = prepareState.ingestionTab || 'sources';
     
     container.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -412,41 +495,68 @@ async function renderPrepareIngestion(container) {
         <div class="mb-5">
             <h6 class="fw-bold mb-3">Ingestion Methods</h6>
             <div class="row g-4">
+                <!-- File Ingestion -->
                 <div class="col-md-3">
-                    <div class="card shadow-sm h-100 cursor-pointer hover-shadow border-0" onclick="window.showUploadModalOld()">
+                    <div class="card shadow-sm h-100 cursor-pointer hover-shadow ${prepareState.ingestionFilters.file ? 'selected-filter' : 'border-0'}" onclick="window.toggleIngestionFilter('file')">
                         <div class="card-body text-center py-4">
                             <i class="bi bi-file-earmark-excel fs-1 text-success mb-2"></i>
                             <h6 class="mb-1">File Ingestion</h6>
                             <p class="small text-muted mb-0">Upload Excel or CSV files</p>
                         </div>
+                        <div class="card-footer bg-white border-0 pt-0 pb-3 text-center">
+                            <div class="d-flex flex-wrap justify-content-center gap-1">
+                                <button class="btn btn-outline-primary btn-xs" onclick="event.stopPropagation(); window.showUploadModalModern()">Upload New</button>
+                                <button class="btn btn-outline-secondary btn-xs" onclick="event.stopPropagation(); window.switchIngestionTabAndFilter('discovered', 'file')">Show Files</button>
+                                <button class="btn btn-outline-secondary btn-xs btn-toggle-filter" onclick="event.stopPropagation(); window.toggleIngestionFilter('file')">Show Data Sources</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
+                <!-- Network Scan -->
                 <div class="col-md-3">
-                    <div class="card shadow-sm h-100 cursor-pointer hover-shadow ${activeSub === 'scans' ? 'border border-primary' : 'border-0'}" onclick="window.setIngestionSubview('scans')">
+                    <div class="card shadow-sm h-100 cursor-pointer hover-shadow ${prepareState.ingestionFilters.network ? 'selected-filter' : 'border-0'}" onclick="window.toggleIngestionFilter('network')">
                         <div class="card-body text-center py-4">
                             <i class="bi bi-broadcast fs-1 text-info mb-2"></i>
                             <h6 class="mb-1">Network Scan</h6>
                             <p class="small text-muted mb-0">Discover assets on network</p>
                         </div>
+                        <div class="card-footer bg-white border-0 pt-0 pb-3 text-center">
+                            <div class="d-flex flex-wrap justify-content-center gap-1">
+                                <button class="btn btn-outline-primary btn-xs" onclick="event.stopPropagation(); window.setIngestionSubview('scans')">Configure Scan</button>
+                                <button class="btn btn-outline-secondary btn-xs btn-toggle-filter" onclick="event.stopPropagation(); window.toggleIngestionFilter('network')">Show Data Sources</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
+                <!-- CMDB Connect -->
                 <div class="col-md-3">
-                    <div class="card shadow-sm h-100 border-0 opacity-75">
+                    <div class="card shadow-sm h-100 cursor-pointer hover-shadow ${prepareState.ingestionFilters.cmdb ? 'selected-filter' : 'border-0'}" onclick="window.toggleIngestionFilter('cmdb')">
                         <div class="card-body text-center py-4">
                             <i class="bi bi-database-fill fs-1 text-primary mb-2"></i>
                             <h6 class="mb-1">CMDB Connect</h6>
                             <p class="small text-muted mb-0">Sync from ServiceNow/Jira</p>
-                            <span class="badge bg-light text-dark rounded-pill mt-2">Soon</span>
+                        </div>
+                        <div class="card-footer bg-white border-0 pt-0 pb-3 text-center">
+                            <div class="d-flex flex-wrap justify-content-center gap-1">
+                                <button class="btn btn-outline-primary btn-xs" onclick="event.stopPropagation()">Configure CMDB</button>
+                                <button class="btn btn-outline-secondary btn-xs btn-toggle-filter" onclick="event.stopPropagation(); window.toggleIngestionFilter('cmdb')">Show Data Sources</button>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <!-- Manual Entry -->
                 <div class="col-md-3">
-                    <div class="card shadow-sm h-100 border-0 opacity-75">
+                    <div class="card shadow-sm h-100 cursor-pointer hover-shadow ${prepareState.ingestionFilters.manual ? 'selected-filter' : 'border-0'}" onclick="window.toggleIngestionFilter('manual')">
                         <div class="card-body text-center py-4">
                             <i class="bi bi-pencil-square fs-1 text-warning mb-2"></i>
                             <h6 class="mb-1">Manual Entry</h6>
                             <p class="small text-muted mb-0">Add assets individually</p>
-                            <span class="badge bg-light text-dark rounded-pill mt-2">v2</span>
+                        </div>
+                        <div class="card-footer bg-white border-0 pt-0 pb-3 text-center">
+                            <div class="d-flex flex-wrap justify-content-center gap-1">
+                                <button class="btn btn-outline-primary btn-xs" onclick="event.stopPropagation()">Add Manual</button>
+                                <button class="btn btn-outline-secondary btn-xs btn-toggle-filter" onclick="event.stopPropagation(); window.toggleIngestionFilter('manual')">Show Data Sources</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -455,23 +565,81 @@ async function renderPrepareIngestion(container) {
 
         <div id="method-details-container" class="mb-5" style="${activeSub === 'scans' ? '' : 'display: none;'}"></div>
 
-        <div id="data-sources-container"></div>
+        <ul class="nav nav-tabs mb-4" id="ingestionTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link ${activeTab === 'sources' ? 'active' : ''}" onclick="window.setIngestionTab('sources')">Active Data Sources</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link ${activeTab === 'discovered' ? 'active' : ''}" onclick="window.setIngestionTab('discovered')">Discovered Data</button>
+            </li>
+        </ul>
+
+        <div id="ingestion-tab-content"></div>
     `;
 
-    renderActiveSources(document.getElementById('data-sources-container'));
+    if (activeTab === 'sources') {
+        renderActiveSources(document.getElementById('ingestion-tab-content'));
+    } else {
+        if (window.renderDiscoveredDataEntities) {
+            await window.renderDiscoveredDataEntities(
+                prepareState.discoveredSearch || '', 
+                'created_time', 'desc', 1, 
+                'ingestion-tab-content',
+                prepareState.discoveredDataSourceFilter || '',
+                prepareState.ingestionFilters
+            );
+        }
+    }
     
     if (activeSub === 'scans') {
         await window.renderNetworkScanView(document.getElementById('method-details-container'));
     }
 }
 
+window.setIngestionTab = (tab) => {
+    prepareState.ingestionTab = tab;
+    if (tab === 'sources') {
+        prepareState.discoveredDataSourceFilter = '';
+    }
+    // Hide subview when switching tabs to avoid it being "always there"
+    prepareState.ingestionSubview = 'overview';
+    renderPrepareStep();
+};
+
+window.clearDiscoveredDataSourceFilter = () => {
+    prepareState.discoveredDataSourceFilter = '';
+    renderPrepareStep();
+};
+
 window.setIngestionSubview = async (subview) => {
     if (prepareState.ingestionSubview === subview) {
         prepareState.ingestionSubview = 'overview';
     } else {
         prepareState.ingestionSubview = subview;
+        // When showing a specific subview, ensure the corresponding filter is ON
+        if (subview === 'scans') {
+            prepareState.ingestionFilters.network = true;
+        }
     }
     await renderPrepareStep();
+};
+
+window.toggleIngestionFilter = (type) => {
+    prepareState.ingestionFilters[type] = !prepareState.ingestionFilters[type];
+    // If we turned off the network filter, hide the scans subview if it was open
+    if (type === 'network' && !prepareState.ingestionFilters.network && prepareState.ingestionSubview === 'scans') {
+        prepareState.ingestionSubview = 'overview';
+    }
+    renderPrepareStep();
+};
+
+window.switchIngestionTabAndFilter = (tab, type) => {
+    prepareState.ingestionTab = tab;
+    // When explicitly clicking "Show Files" or similar, we might want to ensure that filter is ON
+    prepareState.ingestionFilters[type] = true;
+    // Hide any open subviews when switching focus
+    prepareState.ingestionSubview = 'overview';
+    renderPrepareStep();
 };
 
 async function renderActiveSources(container) {
@@ -480,11 +648,21 @@ async function renderActiveSources(container) {
     const response = await fetch('/prepare/data-sources');
     const sources = await response.json();
     
+    const filters = prepareState.ingestionFilters;
+    const filteredSources = sources.filter(src => {
+        const type = src.source_type;
+        if (type === 'Excel' || type === 'CSV') return filters.file;
+        if (type === 'Network Scan') return filters.network;
+        if (type === 'CMDB') return filters.cmdb;
+        if (type === 'Manual') return filters.manual;
+        return true;
+    });
+
     container.innerHTML = `
         <div class="card shadow-sm">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <h6 class="fw-bold mb-0">Active Data Sources</h6>
-                <span class="badge bg-light text-dark rounded-pill">${sources.length} active</span>
+                <span class="badge bg-light text-dark rounded-pill">${filteredSources.length} active</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -501,7 +679,7 @@ async function renderActiveSources(container) {
                             </tr>
                         </thead>
                         <tbody>
-                            ${sources.map(src => `
+                            ${filteredSources.map(src => `
                                 <tr>
                                     <td>
                                         <button class="btn btn-link btn-sm p-0 fw-bold text-decoration-none" onclick="window.viewDataSourceDetails('${src.id}', '${src.name}')">
@@ -520,7 +698,7 @@ async function renderActiveSources(container) {
                                     <td><button class="btn btn-link btn-sm p-0 text-muted"><i class="bi bi-three-dots"></i></button></td>
                                 </tr>
                             `).join('')}
-                            ${sources.length === 0 ? '<tr><td colspan="7" class="text-center py-4 text-muted">No data sources found.</td></tr>' : ''}
+                            ${filteredSources.length === 0 ? '<tr><td colspan="7" class="text-center py-4 text-muted">No data sources found.</td></tr>' : ''}
                         </tbody>
                     </table>
                 </div>
@@ -695,76 +873,9 @@ window.viewScanResults = async (scanId) => {
 }
 
 window.viewDataSourceDetails = async (sourceId, sourceName) => {
-    let container = document.getElementById('standardisation-sources-container');
-    if (!container) {
-        container = document.getElementById('data-sources-container');
-    }
-    
-    if (!container) return;
-    
-    container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
-    
-    const response = await fetch(`/prepare/data-sources/${sourceId}/discovered-data`);
-    const entities = await response.json();
-    
-    if (entities.length === 0) {
-        container.innerHTML = `
-            <div class="card shadow-sm">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-bold mb-0">Discovered Data: ${sourceName}</h6>
-                    <button class="btn btn-outline-dark btn-sm" onclick="window.renderPrepareStep()">Back to List</button>
-                </div>
-                <div class="card-body py-5 text-center text-muted">
-                    No discovered data records found for this source.
-                </div>
-            </div>
-        `;
-        return;
-    }
-
-    // Get all unique field names for the table header
-    const allFieldNames = new Set();
-    entities.forEach(e => {
-        e.fields.forEach(f => allFieldNames.add(f.field_name));
-    });
-    const fieldNames = Array.from(allFieldNames);
-
-    container.innerHTML = `
-        <div class="card shadow-sm">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <h6 class="fw-bold mb-0">Discovered Data: ${sourceName}</h6>
-                <div class="d-flex gap-2">
-                    <span class="badge bg-light text-dark rounded-pill">${entities.length} records</span>
-                    <button class="btn btn-outline-primary btn-sm" onclick="window.goToStandardisation('${sourceName}')">Map Fields</button>
-                    <button class="btn btn-outline-dark btn-sm" onclick="window.renderPrepareStep()">Back to List</button>
-                </div>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0 small" style="min-width: 800px;">
-                        <thead class="bg-light">
-                            <tr>
-                                <th>Entity ID</th>
-                                ${fieldNames.map(f => `<th>${f}</th>`).join('')}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${entities.map(e => {
-                                const fieldMap = {};
-                                e.fields.forEach(f => fieldMap[f.field_name] = f.field_value);
-                                return `
-                                    <tr>
-                                        <td><code class="text-muted" style="font-size: 0.7rem;">${e.id.substring(0,8)}</code></td>
-                                        ${fieldNames.map(f => `<td>${fieldMap[f] || '-'}</td>`).join('')}
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    `;
+    prepareState.ingestionTab = 'discovered';
+    prepareState.discoveredDataSourceFilter = sourceName;
+    await renderPrepareStep();
 }
 
 async function renderPrepareNormalisation(container) {
@@ -976,9 +1087,31 @@ async function renderPreparePublish(container) {
 
 window.publishToMap = async () => {
     if (confirm('Are you sure you want to promote all data to the Map phase?')) {
-        // Implementation for promotion
-        alert('Data successfully promoted to Map phase!');
-        // In a real app, this would trigger a backend process
+        // In a real app, this would trigger a backend process to mark data as published
+        // For this prototype, we'll navigate directly to the Map phase
+        if (window.navigate) {
+            window.navigate('map');
+        } else {
+            alert('Data successfully promoted to Map phase!');
+        }
+    }
+};
+
+window.showUploadModalModern = () => {
+    if (window.showUploadModalOld) {
+        window.showUploadModalOld((data) => {
+            // After successful upload in modernized view
+            prepareState.currentStep = 'standardisation';
+            prepareState.standardisationSubview = 'fields';
+            if (data && data.source_name) {
+                prepareState.standardisationSource = data.source_name;
+            } else {
+                prepareState.standardisationSource = 'all'; 
+            }
+            renderPrepareStep();
+        });
+    } else {
+        alert('Upload module not loaded');
     }
 };
 

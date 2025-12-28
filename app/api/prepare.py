@@ -1,6 +1,8 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form
+from typing import Optional
 from app.schemas.prepare import ConfigurationItem, ConfigurationItemCreate, CIType, NetworkScan, NetworkScanCreate
 from app.services.storage import storage
+from app.utils.recommender import get_field_recommendation
 import pandas as pd
 import io
 import json
@@ -78,64 +80,97 @@ async def update_field_mapping(mapping_id: str, updates: dict):
 async def upload_dataset(
     name: str = Form(...),
     rating: str = Form(...),
-    worksheet: str = Form(...),
-    header_row: int = Form(...),
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    worksheet: Optional[str] = Form(None),
+    header_row: Optional[int] = Form(None),
+    worksheets_json: Optional[str] = Form(None)
 ):
     contents = await file.read()
     try:
-        if file.filename.endswith('.csv'):
-            df = pd.read_csv(io.BytesIO(contents), header=header_row-1)
-        elif file.filename.endswith(('.xls', '.xlsx')):
-            df = pd.read_excel(io.BytesIO(contents), sheet_name=worksheet, header=header_row-1)
+        worksheets_to_process = []
+        if worksheets_json:
+            worksheets_to_process = json.loads(worksheets_json)
+        elif worksheet and header_row:
+            worksheets_to_process = [{"name": worksheet, "header_row": header_row}]
         else:
-            raise HTTPException(status_code=400, detail="Invalid file format")
+            raise HTTPException(status_code=400, detail="No worksheet information provided")
+
+        total_records = 0
         
-        # Add data source to storage
+        # Add data source to storage once for the file
         ds_id = storage.add_data_source({
             "name": name,
             "source_type": "Excel" if file.filename.endswith(('.xls', '.xlsx')) else "CSV",
-            "data_ingested": worksheet,
+            "data_ingested": ", ".join([ws["name"] for ws in worksheets_to_process]),
             "last_sync": datetime.now().strftime("%b %d, %Y, %I:%M:%S %p"),
-            "records": len(df),
+            "records": 0, # Will update after processing
             "sync_count": 1,
-            "status": "Success",
+            "status": "Processing",
             "process": True,
-            "config": {"worksheets": [worksheet]},
+            "config": {"worksheets": [ws["name"] for ws in worksheets_to_process]},
             "rating": rating
         })
 
-        # Generate initial field mappings
-        for col in df.columns:
-            storage.add_field_mapping({
-                "source_field": str(col),
-                "data_source": name,
-                "worksheet": worksheet,
-                "data_entity": None,
-                "target_field": None,
-                "status": "Pending",
-                "process": True
-            })
+        for ws_info in worksheets_to_process:
+            ws_name = ws_info["name"]
+            h_row = int(ws_info["header_row"])
+            
+            if file.filename.endswith('.csv'):
+                df = pd.read_csv(io.BytesIO(contents), header=h_row-1)
+            elif file.filename.endswith(('.xls', '.xlsx')):
+                df = pd.read_excel(io.BytesIO(contents), sheet_name=ws_name, header=h_row-1)
+            else:
+                raise HTTPException(status_code=400, detail="Invalid file format")
+            
+            total_records += len(df)
 
-        # Create Discovered Data Records for each row in the uploaded file
-        # Limit to first 100 rows to avoid excessive data in prototype
-        for _, row in df.head(100).iterrows():
-            discovered_entity_id = storage.add_discovered_data_entity({
-                "source_type": "file",
-                "user": "admin",
-                "data_entity_name": worksheet,
-                "data_source_id": ds_id
-            })
+            # Get all data dictionary fields for recommendations
+            data_fields = storage.get_data_fields()
+
+            # Generate initial field mappings for this worksheet
             for col in df.columns:
-                storage.add_discovered_data_field({
-                    "discovered_data_entity_id": discovered_entity_id,
-                    "field_name": str(col),
-                    "field_value": str(row[col]),
-                    "rating": rating
+                # Sample some unique values for recommendation engine
+                column_values = df[col].dropna().unique().tolist()[:50]
+                rec_entity, rec_field, rec_field_id = get_field_recommendation(str(col), column_values, data_fields)
+
+                storage.add_field_mapping({
+                    "source_field": str(col),
+                    "data_source": name,
+                    "worksheet": ws_name,
+                    "data_entity": rec_entity,
+                    "target_field": rec_field,
+                    "data_dictionary_field_id": rec_field_id,
+                    "status": "Pending",
+                    "process": True
                 })
 
-        return {"message": f"Successfully uploaded {name} with {len(df)} records", "source_id": ds_id}
+            # Create Discovered Data Records for each row
+            # Limit to first 100 rows to avoid excessive data in prototype
+            for _, row in df.head(100).iterrows():
+                discovered_entity_id = storage.add_discovered_data_entity({
+                    "source_type": "file",
+                    "user": "admin",
+                    "data_entity_name": ws_name,
+                    "data_source_id": ds_id
+                })
+                for col in df.columns:
+                    storage.add_discovered_data_field({
+                        "discovered_data_entity_id": discovered_entity_id,
+                        "field_name": str(col),
+                        "field_value": str(row[col]),
+                        "rating": rating
+                    })
+        
+        # Update total records and status
+        storage.update_data_source(ds_id, {
+            "records": total_records,
+            "status": "Success"
+        })
+
+        return {"message": f"Successfully uploaded {name} with {total_records} records from {len(worksheets_to_process)} worksheets", "source_id": ds_id, "source_name": name}
     except Exception as e:
+        if 'ds_id' in locals():
+            storage.update_data_source(ds_id, {"status": "Error", "message": str(e)})
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/scans", response_model=list[NetworkScan])

@@ -159,6 +159,15 @@ document.addEventListener('DOMContentLoaded', () => {
         window.currentHelpSection = sectionId;
     };
 
+    window.navigate = (module, context = 'modern') => {
+        // Update active link in sidebar
+        document.querySelectorAll('#sidebar li').forEach(li => li.classList.remove('active'));
+        const navLink = document.querySelector(`#sidebar a[data-module="${module}"]`);
+        if (navLink) navLink.parentElement.classList.add('active');
+        
+        loadModule(module, context);
+    };
+
     async function loadModule(module, context = 'modern') {
         window.currentModule = module;
         window.currentHelpSection = null; // Reset granular help section on module change
@@ -166,7 +175,25 @@ document.addEventListener('DOMContentLoaded', () => {
         
         switch(module) {
             case 'discovered-data':
-                if (window.renderDiscoveredDataEntities) await window.renderDiscoveredDataEntities();
+                if (window.renderPrepare) {
+                    prepareState.currentStep = 'standardisation';
+                    prepareState.standardisationTab = 'discovered';
+                    await window.renderPrepare();
+                }
+                break;
+            case 'data-entities':
+                if (window.renderPrepare) {
+                    prepareState.currentStep = 'standardisation';
+                    prepareState.standardisationTab = 'entities';
+                    await window.renderPrepare();
+                }
+                break;
+            case 'data-dictionary':
+                if (window.renderPrepare) {
+                    prepareState.currentStep = 'standardisation';
+                    prepareState.standardisationTab = 'dictionary';
+                    await window.renderPrepare();
+                }
                 break;
             case 'help':
                 if (window.renderHelp) window.renderHelp(context !== 'modern' ? context : null);
@@ -192,17 +219,11 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'evaluate':
                 if (window.renderEvaluate) await window.renderEvaluate();
                 break;
-            case 'data-dictionary':
-                if (window.renderDataDictionary) await window.renderDataDictionary();
-                break;
             case 'environments':
                 if (window.renderEnvironments) await window.renderEnvironments();
                 break;
             case 'move-principles':
                 if (window.renderMovePrinciples) await window.renderMovePrinciples();
-                break;
-            case 'data-entities':
-                if (window.renderDataEntities) await window.renderDataEntities();
                 break;
             case 'score-card':
                 if (window.renderScoreCard) await window.renderScoreCard();
@@ -211,6 +232,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (window.renderAdminUsers) await window.renderAdminUsers();
                 break;
             case 'admin-project':
+                if (window.renderAdminProject) await window.renderAdminProject();
+                break;
             case 'admin-failures':
                 window.setHelpSection('help-' + module);
                 contentArea.innerHTML = `

@@ -1,6 +1,7 @@
 // --- Module: Data Dictionary ---
-window.renderDataDictionary = async (entityFilter = '', searchFilter = '') => {
-    const contentArea = document.getElementById('main-area');
+window.renderDataDictionary = async (entityFilter = '', searchFilter = '', containerId = null) => {
+    const contentArea = containerId ? document.getElementById(containerId) : document.getElementById('main-area');
+    const isNested = containerId && containerId !== 'main-area';
     const url = new URL('/data-dictionary/fields', window.location.origin);
     if (entityFilter) url.searchParams.append('entity', entityFilter);
     if (searchFilter) url.searchParams.append('search', searchFilter);
@@ -11,14 +12,29 @@ window.renderDataDictionary = async (entityFilter = '', searchFilter = '') => {
     const entitiesResponse = await fetch('/data-dictionary/entities');
     const entities = await entitiesResponse.json();
 
-    let html = `
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold">Data Dictionary</h3>
-            <button class="btn btn-primary" id="btn-add-standard-value">
-                <i class="bi bi-plus-lg me-1"></i> Add Standard Value
-            </button>
-        </div>
+    let html = '';
+    
+    if (!isNested) {
+        html += `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold">Data Dictionary</h3>
+                <button class="btn btn-primary" id="btn-add-standard-value">
+                    <i class="bi bi-plus-lg me-1"></i> Add Standard Value
+                </button>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0">Data Dictionary</h4>
+                <button class="btn btn-primary btn-sm" id="btn-add-standard-value">
+                    <i class="bi bi-plus-lg me-1"></i> Add Standard Value
+                </button>
+            </div>
+        `;
+    }
 
+    html += `
         <div class="card mb-4 border-0 shadow-sm">
             <div class="card-body">
                 <div class="row g-3">
@@ -51,7 +67,7 @@ window.renderDataDictionary = async (entityFilter = '', searchFilter = '') => {
                     </thead>
                     <tbody>
                         ${fields.map(field => `
-                            <tr style="cursor: pointer" onclick="window.renderFieldStandardValues('${field.id}')">
+                            <tr style="cursor: pointer" onclick="window.renderFieldStandardValues('${field.id}', ${containerId ? "'"+containerId+"'" : 'null'})">
                                 <td class="ps-4 fw-bold text-primary">${field.name}</td>
                                 <td>${field.entity}</td>
                                 <td>
@@ -104,11 +120,11 @@ window.renderDataDictionary = async (entityFilter = '', searchFilter = '') => {
 
     // Add event listeners
     document.getElementById('dictionary-search').addEventListener('input', debounce((e) => {
-        window.renderDataDictionary(document.getElementById('dictionary-entity-filter').value, e.target.value);
+        window.renderDataDictionary(document.getElementById('dictionary-entity-filter').value, e.target.value, containerId);
     }, 500));
 
     document.getElementById('dictionary-entity-filter').addEventListener('change', (e) => {
-        window.renderDataDictionary(e.target.value, document.getElementById('dictionary-search').value);
+        window.renderDataDictionary(e.target.value, document.getElementById('dictionary-search').value, containerId);
     });
 
     const modalElement = document.getElementById('addStandardValueModal');
@@ -132,13 +148,13 @@ window.renderDataDictionary = async (entityFilter = '', searchFilter = '') => {
         if (response.ok) {
             modal.hide();
             // Wait for modal animation
-            setTimeout(() => window.renderDataDictionary(entityFilter, searchFilter), 300);
+            setTimeout(() => window.renderDataDictionary(entityFilter, searchFilter, containerId), 300);
         }
     });
 }
 
-window.renderFieldStandardValues = async (fieldId) => {
-    const contentArea = document.getElementById('main-area');
+window.renderFieldStandardValues = async (fieldId, containerId = null) => {
+    const contentArea = containerId ? document.getElementById(containerId) : document.getElementById('main-area');
     const response = await fetch(`/data-dictionary/fields?field_id=${fieldId}`);
     const fields = await response.json();
     if (fields.length === 0) return;
@@ -148,7 +164,7 @@ window.renderFieldStandardValues = async (fieldId) => {
         <div class="mb-4">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="#" onclick="window.renderDataDictionary(); return false;">Data Dictionary</a></li>
+                    <li class="breadcrumb-item"><a href="#" onclick="window.renderDataDictionary('', '', ${containerId ? "'"+containerId+"'" : 'null'}); return false;">Data Dictionary</a></li>
                     <li class="breadcrumb-item active text-muted">${field.entity}</li>
                 </ol>
             </nav>
@@ -225,7 +241,7 @@ window.renderFieldStandardValues = async (fieldId) => {
 
         if (response.ok) {
             modal.hide();
-            setTimeout(() => window.renderFieldStandardValues(fieldId), 300);
+            setTimeout(() => window.renderFieldStandardValues(fieldId, containerId), 300);
         }
     });
 }

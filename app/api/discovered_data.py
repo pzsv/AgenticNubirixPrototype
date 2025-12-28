@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException
 from app.schemas.discovered_data import DiscoveredDataEntity, DiscoveredDataField
 from app.services.storage import storage
-from typing import List
+from typing import List, Optional
 
 router = APIRouter(prefix="/discovered-data", tags=["Discovered Data"])
 
 @router.get("", response_model=List[DiscoveredDataEntity])
-async def list_discovered_data_entities():
-    return storage.get_discovered_data_entities()
+async def list_discovered_data_entities(data_source_id: Optional[str] = None):
+    return storage.get_discovered_data_entities(data_source_id=data_source_id)
 
 @router.get("/{entity_id}", response_model=DiscoveredDataEntity)
 async def get_discovered_data_entity(entity_id: str):

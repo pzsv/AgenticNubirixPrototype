@@ -91,9 +91,20 @@ body {
     color: #333;
 }
 
-.btn-white:hover {
-    background-color: #f8f9fa;
-    color: #000;
+.btn-xs {
+    padding: 0.1rem 0.4rem;
+    font-size: 0.7rem;
+    line-height: 1.2;
+    border-radius: 0.2rem;
+}
+
+.card.selected-filter {
+    border: 2px solid var(--primary-color) !important;
+}
+
+.card.selected-filter .btn-toggle-filter {
+    background-color: var(--primary-color);
+    color: white;
 }
 
 #cy-navigator-container {

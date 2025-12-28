@@ -9,23 +9,17 @@ class DatabaseStorage:
     def __init__(self):
         Base.metadata.create_all(bind=engine)
         self._migrate_db()
-        # Seed only if empty
+        # Seed only if empty (using DataField as the master indicator)
         with SessionLocal() as db:
             if db.query(models.DataField).count() == 0:
+                print("Database is empty. Starting initial seed...")
                 self._seed_data_dictionary(db)
-            if db.query(models.DataSource).count() == 0:
                 self._seed_data_sources(db)
-            if db.query(models.DiscoveredDataEntity).count() == 0:
                 self._seed_discovered_data(db)
-            if db.query(models.NetworkScan).count() == 0:
                 self._seed_network_scans(db)
-            if db.query(models.Environment).count() == 0:
                 self._seed_environments(db)
-            if db.query(models.MovePrinciple).count() == 0:
                 self._seed_move_principles(db)
-            if db.query(models.ScoreCardFactor).count() == 0:
                 self._seed_score_card(db)
-            if db.query(models.Workload).count() == 0:
                 self._seed_cis_workloads_dependencies(db)
             else:
                 self._fix_existing_ci_types(db)
@@ -808,6 +802,17 @@ class DatabaseStorage:
                 } for d in data_sources
             ]
 
+    def update_data_source(self, ds_id: str, updates: Dict[str, Any]):
+        with SessionLocal() as db:
+            db_ds = db.query(models.DataSource).filter(models.DataSource.id == ds_id).first()
+            if db_ds:
+                for key, value in updates.items():
+                    if hasattr(db_ds, key):
+                        setattr(db_ds, key, value)
+                db.commit()
+                return True
+            return False
+
     def add_field_mapping(self, mapping_data: Dict[str, Any], db: Optional[Session] = None) -> str:
         mapping_id = mapping_data.get("id") or str(uuid.uuid4())
         db_mapping = models.FieldMapping(
@@ -998,6 +1003,62 @@ class DatabaseStorage:
             db.commit()
             return True
 
+    def override_data_entities(self, entities_data: List[Dict[str, Any]], fields_data: List[Dict[str, Any]]):
+        with SessionLocal() as db:
+            # 1. Clear existing - nullify key_field_id first to avoid FK constraints
+            db.query(models.DataEntity).update({models.DataEntity.key_field_id: None})
+            db.flush()
+            db.query(models.DataEntityField).delete()
+            db.query(models.DataEntity).delete()
+            db.commit()
+
+            # 2. Map Entity Name -> ID
+            entity_name_to_id = {}
+            for ent in entities_data:
+                eid = str(uuid.uuid4())
+                name = str(ent.get('Name') or ent.get('name') or '')
+                if not name: continue
+                entity_name_to_id[name] = eid
+                db.add(models.DataEntity(id=eid, name=name))
+            db.flush() 
+
+            # 3. Map Field Name + Entity Name -> Field ID
+            field_key_to_id = {}
+            for fld in fields_data:
+                fid = str(uuid.uuid4())
+                ent_name = str(fld.get('Data_Entity_Name') or '')
+                fld_name = str(fld.get('Name') or '')
+                if ent_name in entity_name_to_id and fld_name:
+                    eid = entity_name_to_id[ent_name]
+                    anchor_val = fld.get('Anchor_Field')
+                    # Convert anchor_val to string "true" or "false" or empty
+                    anchor_str = ""
+                    if isinstance(anchor_val, bool):
+                        anchor_str = "true" if anchor_val else "false"
+                    elif anchor_val:
+                        anchor_str = str(anchor_val).lower()
+                    
+                    db.add(models.DataEntityField(
+                        id=fid,
+                        name=fld_name,
+                        anchor=anchor_str,
+                        entity_id=eid
+                    ))
+                    field_key_to_id[(ent_name, fld_name)] = fid
+            db.flush()
+
+            # 4. Set key_field_id for entities
+            for ent in entities_data:
+                name = str(ent.get('Name') or ent.get('name') or '')
+                key_field_name = str(ent.get('Key Field') or '')
+                if name and key_field_name:
+                    if (name, key_field_name) in field_key_to_id:
+                        fid = field_key_to_id[(name, key_field_name)]
+                        eid = entity_name_to_id[name]
+                        db.query(models.DataEntity).filter(models.DataEntity.id == eid).update({"key_field_id": fid})
+            
+            db.commit()
+
     def add_discovered_data_entity(self, entity_data: Dict[str, Any], db: Optional[Session] = None) -> str:
         entity_id = entity_data.get("id") or str(uuid.uuid4())
         created_time = entity_data.get("created_time") or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1021,10 +1082,18 @@ class DatabaseStorage:
 
     def get_discovered_data_entities(self, data_source_id: Optional[str] = None) -> List[Dict[str, Any]]:
         with SessionLocal() as db:
-            query = db.query(models.DiscoveredDataEntity)
+            query = db.query(
+                models.DiscoveredDataEntity,
+                models.DataSource.name.label("source_name")
+            ).outerjoin(
+                models.DataSource,
+                models.DiscoveredDataEntity.data_source_id == models.DataSource.id
+            )
+            
             if data_source_id:
                 query = query.filter(models.DiscoveredDataEntity.data_source_id == data_source_id)
-            entities = query.all()
+            
+            results = query.all()
             return [
                 {
                     "id": e.id,
@@ -1033,6 +1102,7 @@ class DatabaseStorage:
                     "user": e.user,
                     "data_entity_name": e.data_entity_name,
                     "data_source_id": e.data_source_id,
+                    "source_name": source_name,
                     "status": e.status,
                     "fields": [
                         {
@@ -1045,13 +1115,21 @@ class DatabaseStorage:
                         }
                         for f in e.fields
                     ]
-                } for e in entities
+                } for e, source_name in results
             ]
 
     def get_discovered_data_entity_by_id(self, entity_id: str) -> Optional[Dict[str, Any]]:
         with SessionLocal() as db:
-            e = db.query(models.DiscoveredDataEntity).filter(models.DiscoveredDataEntity.id == entity_id).first()
-            if e:
+            result = db.query(
+                models.DiscoveredDataEntity,
+                models.DataSource.name.label("source_name")
+            ).outerjoin(
+                models.DataSource,
+                models.DiscoveredDataEntity.data_source_id == models.DataSource.id
+            ).filter(models.DiscoveredDataEntity.id == entity_id).first()
+            
+            if result:
+                e, source_name = result
                 return {
                     "id": e.id,
                     "created_time": e.created_time,
@@ -1059,6 +1137,7 @@ class DatabaseStorage:
                     "user": e.user,
                     "data_entity_name": e.data_entity_name,
                     "data_source_id": e.data_source_id,
+                    "source_name": source_name,
                     "status": e.status,
                     "fields": [
                         {
@@ -1510,5 +1589,58 @@ class DatabaseStorage:
                 db.commit()
                 return True
             return False
+
+    def reset_project(self):
+        with SessionLocal() as db:
+            try:
+                # 1. Delete data from tables that should be cleared
+                # Order matters for foreign keys if they are enabled.
+                from sqlalchemy import text
+                
+                # Many-to-many association tables
+                db.execute(text("DELETE FROM workload_ci"))
+                db.execute(text("DELETE FROM wave_workload"))
+                db.execute(text("DELETE FROM wave_mdg"))
+                db.execute(text("DELETE FROM mdg_workload"))
+                
+                # Plan and Move data
+                db.query(models.Runbook).delete()
+                db.query(models.MoveDependencyGroup).delete()
+                db.query(models.Wave).delete()
+                
+                # Workload and CI data
+                db.query(models.Dependency).delete()
+                db.query(models.Workload).delete()
+                db.query(models.ConfigurationItem).delete()
+                
+                # Ingestion and Discovery data
+                db.query(models.DiscoveredDataField).delete()
+                db.query(models.DiscoveredDataEntity).delete()
+                db.query(models.S2TMapping).delete()
+                db.query(models.FieldMapping).delete()
+                db.query(models.DataSource).delete()
+                db.query(models.NetworkScan).delete()
+                
+                # Configuration data
+                db.query(models.Environment).delete()
+                db.query(models.MovePrinciple).delete()
+                db.query(models.ScoreCardOption).delete()
+                db.query(models.ScoreCardFactor).delete()
+                
+                # We KEEP:
+                # models.DataField
+                # models.StandardValue
+                # models.DataEntity
+                # models.DataEntityField
+                # models.User
+                # models.Role
+                # models.AccessRight
+                
+                db.commit()
+                return True
+            except Exception as e:
+                db.rollback()
+                print(f"Error resetting project: {e}")
+                raise e
 
 storage = DatabaseStorage()

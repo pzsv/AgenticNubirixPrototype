@@ -202,25 +202,29 @@ async function renderPrepareOldIngest(container) {
 }
 
 async function renderPrepareOldMap(container) {
-    const [mappingsRes, entitiesRes, datasetsRes] = await Promise.all([
+    const [mappingsRes, entitiesRes, datasetsRes, fieldsRes] = await Promise.all([
         fetch('/prepare/field-mappings'),
         fetch('/data-dictionary/entities'),
-        fetch('/prepare/datasets')
+        fetch('/prepare/datasets'),
+        fetch('/data-dictionary/fields')
     ]);
     const mappings = await mappingsRes.json();
     const entities = await entitiesRes.json();
     const datasets = await datasetsRes.json();
+    const allFields = await fieldsRes.json();
     
     // Filter logic
     const searchTerm = (prepareOldState.mapSearch || '').toLowerCase();
     const filterSource = prepareOldState.mapFilterSource || 'Data Source';
     const filterStatus = prepareOldState.mapFilterStatus || 'Status';
+    const filterWorksheet = prepareOldState.mapFilterWorksheet || 'Worksheet';
 
     const filteredMappings = mappings.filter(m => {
         const matchesSearch = !searchTerm || m.source_field.toLowerCase().includes(searchTerm);
         const matchesSource = filterSource === 'Data Source' || m.data_source === filterSource;
         const matchesStatus = filterStatus === 'Status' || m.status === filterStatus;
-        return matchesSearch && matchesSource && matchesStatus;
+        const matchesWorksheet = filterWorksheet === 'Worksheet' || m.worksheet === filterWorksheet;
+        return matchesSearch && matchesSource && matchesStatus && matchesWorksheet;
     });
 
     const resolvedCount = mappings.filter(m => m.status === 'Resolved').length;
@@ -262,8 +266,9 @@ async function renderPrepareOldMap(container) {
                 </select>
             </div>
             <div class="col-md-2">
-                <select class="form-select form-select-sm">
+                <select class="form-select form-select-sm" onchange="window.setMapOldFilter('mapFilterWorksheet', this.value)">
                     <option>Worksheet</option>
+                    ${[...new Set(mappings.filter(m => filterSource === 'Data Source' || m.data_source === filterSource).map(m => m.worksheet))].map(ws => `<option ${prepareOldState.mapFilterWorksheet === ws ? 'selected' : ''}>${ws}</option>`).join('')}
                 </select>
             </div>
             <div class="col-md-2">
@@ -290,7 +295,9 @@ async function renderPrepareOldMap(container) {
                         </tr>
                     </thead>
                     <tbody>
-                        ${filteredMappings.map(m => `
+                        ${filteredMappings.map(m => {
+                            const entityFields = allFields.filter(f => f.entity === m.data_entity);
+                            return `
                             <tr>
                                 <td>${m.source_field}</td>
                                 <td class="text-muted">${m.data_source}</td>
@@ -304,13 +311,20 @@ async function renderPrepareOldMap(container) {
                                 <td>
                                     <select class="form-select form-select-sm" id="target-field-${m.id}" onchange="window.updateMappingOld('${m.id}', 'target_field', this.value)">
                                         <option value="">Choose field</option>
-                                        ${m.target_field ? `<option value="${m.target_field}" selected>${m.target_field}</option>` : ''}
+                                        ${entityFields.map(f => `<option value="${f.name}" ${m.target_field === f.name ? 'selected' : ''}>${f.name}</option>`).join('')}
                                     </select>
                                 </td>
                                 <td>
-                                    <span class="badge ${m.status === 'Resolved' ? 'bg-success' : m.status === 'Pending' ? 'bg-danger' : 'bg-secondary'}">
-                                        ${m.status}
-                                    </span>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge ${m.status === 'Resolved' ? 'bg-success' : m.status === 'Pending' ? 'bg-danger' : 'bg-secondary'}">
+                                            ${m.status}
+                                        </span>
+                                        ${m.status === 'Pending' && m.data_entity && m.target_field ? 
+                                            `<button class="btn btn-link btn-sm p-0 ms-2" onclick="window.updateMappingOld('${m.id}', 'status', 'Resolved')" title="Approve Recommendation">
+                                                <i class="bi bi-check-circle text-success"></i>
+                                            </button>` : ''
+                                        }
+                                    </div>
                                 </td>
                                 <td>
                                     <div class="form-check form-switch">
@@ -318,20 +332,13 @@ async function renderPrepareOldMap(container) {
                                     </div>
                                 </td>
                             </tr>
-                        `).join('')}
+                        `;}).join('')}
                         ${filteredMappings.length === 0 ? '<tr><td colspan="7" class="text-center py-4 text-muted">No mappings found matching filters.</td></tr>' : ''}
                     </tbody>
                 </table>
             </div>
         </div>
     `;
-
-    // Add event listeners for entity selection to load fields
-    for (const m of filteredMappings) {
-        if (m.data_entity) {
-            await window.updateTargetFieldsDropdownOld(m.id, m.data_entity, m.target_field);
-        }
-    }
 }
 
 window.setMapOldFilter = (key, value) => {
@@ -378,78 +385,168 @@ window.updateTargetFieldsDropdownOld = async (mappingId, entity, selectedField =
         fields.map(f => `<option value="${f.name}" ${selectedField === f.name ? 'selected' : ''}>${f.name}</option>`).join('');
 };
 
-window.showUploadModalOld = () => {
+window.showWorksheetPreviewModal = (workbook, sheetName, onSelect) => {
+    if (!workbook) {
+        alert('Please select a file first');
+        return;
+    }
+    
+    const worksheet = workbook.Sheets[sheetName];
+    if (!worksheet) {
+        alert(`Sheet "${sheetName}" not found in workbook`);
+        return;
+    }
+
+    // Get first 15 rows
+    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 0, defval: '' }).slice(0, 15);
+    
+    const modalHtml = `
+        <div class="modal fade" id="previewHeaderModal" tabindex="-1" style="z-index: 1070;">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content shadow-lg">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold">Select Header Row: ${sheetName}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="small text-muted mb-3">Click on the row that contains the column headers (ingested field names).</p>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover table-bordered small">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 60px;" class="text-center">Row #</th>
+                                        ${data[0] ? data[0].map((_, i) => `<th>Column ${i+1}</th>`).join('') : '<th>No data found</th>'}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.map((row, rowIndex) => `
+                                        <tr style="cursor: pointer;" onclick="window.selectHeaderRow(${rowIndex + 1})">
+                                            <td class="bg-light fw-bold text-center">${rowIndex + 1}</td>
+                                            ${row.map(cell => `<td>${cell === undefined || cell === null ? '' : cell}</td>`).join('')}
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const existing = document.getElementById('previewHeaderModal');
+    if (existing) existing.remove();
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('previewHeaderModal'));
+    
+    window.selectHeaderRow = (rowNum) => {
+        onSelect(rowNum);
+        modal.hide();
+    };
+    
+    modal.show();
+};
+
+window.showUploadModalOld = (callback) => {
+    let currentWorkbook = null;
+
+    const addWorksheetRow = (name = '', headerRow = 1) => {
+        const container = document.getElementById('worksheets-container');
+        const rowId = 'ws-' + Math.random().toString(36).substr(2, 9);
+        const rowHtml = `
+            <div class="row g-2 mb-2 worksheet-row align-items-end" id="${rowId}">
+                <div class="col-6">
+                    <label class="form-label small fw-bold mb-1">Worksheet Name *</label>
+                    <input type="text" class="form-control form-control-sm" name="worksheet[]" placeholder="Case sensitive" value="${name}" required>
+                </div>
+                <div class="col-4">
+                    <label class="form-label small fw-bold mb-1">Header Row *</label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" class="form-control form-control-sm" name="header_row[]" value="${headerRow}" required>
+                        <button class="btn btn-outline-secondary btn-preview-header" type="button" title="Select Header Row from Preview">
+                            <i class="bi bi-table"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-2">
+                    <button type="button" class="btn btn-outline-danger btn-sm border-0 remove-worksheet" onclick="this.closest('.worksheet-row').remove()" title="Remove Worksheet">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', rowHtml);
+        
+        const rowElement = document.getElementById(rowId);
+        rowElement.querySelector('.btn-preview-header').onclick = () => {
+            const worksheetName = rowElement.querySelector('input[name="worksheet[]"]').value;
+            if (!worksheetName) {
+                alert('Please enter or select a worksheet name first');
+                return;
+            }
+            window.showWorksheetPreviewModal(currentWorkbook, worksheetName, (selectedRow) => {
+                rowElement.querySelector('input[name="header_row[]"]').value = selectedRow;
+            });
+        };
+    };
+
     const modalHtml = `
         <div class="modal fade" id="uploadModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
-                    <div class="modal-header border-0">
+                    <div class="modal-header border-0 pb-0">
                         <h5 class="modal-title fw-bold">Upload Files</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
-                        <p class="text-muted small">Select and upload your spreadsheet files.</p>
+                    <div class="modal-body pt-2">
+                        <p class="text-muted small mb-4">Select an Excel or CSV file. Sheet names will be automatically detected.</p>
                         
                         <form id="upload-form">
-                            <div class="card mb-3">
+                            <div class="card border-0 bg-light mb-4">
                                 <div class="card-body">
-                                    <div class="d-flex justify-content-between mb-3">
-                                        <h6 class="fw-bold mb-0">Upload File 1</h6>
-                                        <i class="bi bi-trash text-muted"></i>
+                                    <div class="mb-4">
+                                        <label class="form-label small fw-bold">Data Source Name *</label>
+                                        <input type="text" class="form-control" name="name" placeholder="e.g. CMDB Export 2024" required>
                                     </div>
-                                    
-                                    <div class="d-flex gap-4 mb-3">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="sourceType" id="newSource" value="new" checked>
-                                            <label class="form-check-label small" for="newSource">Create new data source</label>
+
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">Ingestion Rating *</label>
+                                            <select class="form-select" name="rating">
+                                                <option value="Bronze">Bronze (Raw/Untrusted)</option>
+                                                <option value="Silver">Silver (Validated)</option>
+                                                <option value="Gold">Gold (Authoritative)</option>
+                                            </select>
                                         </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="sourceType" id="existingSource" value="existing">
-                                            <label class="form-check-label small" for="existingSource">Choose an existing data source</label>
-                                        </div>
                                     </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label small fw-bold">Data Source *</label>
-                                        <input type="text" class="form-control form-control-sm" name="name" required>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label small fw-bold">Ingestion Rating *</label>
-                                        <select class="form-select form-select-sm" name="rating">
-                                            <option value="Bronze">Bronze</option>
-                                            <option value="Silver">Silver</option>
-                                            <option value="Gold">Gold</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="upload-zone p-4 mb-3 text-center border border-dashed rounded bg-light">
-                                        <i class="bi bi-file-earmark-arrow-up fs-2 mb-2 d-block"></i>
-                                        <span class="small">Drop files to attach or <label for="fileInput" class="text-primary cursor-pointer" style="cursor:pointer">Browse</label></span>
+                                    <div class="upload-zone p-4 mb-4 text-center border border-dashed rounded bg-white cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                                        <i class="bi bi-file-earmark-arrow-up fs-1 text-primary mb-2 d-block"></i>
+                                        <div class="fw-bold">Click to Browse or Drag & Drop</div>
+                                        <div class="small text-muted">Supports .xlsx, .xls, .csv</div>
                                         <input type="file" id="fileInput" name="file" class="d-none" accept=".csv,.xlsx,.xls" required>
-                                        <div id="file-name" class="small mt-2 text-success"></div>
+                                        <div id="file-name" class="fw-bold mt-2 text-success"></div>
                                     </div>
 
-                                    <div class="row g-2 mb-3">
-                                        <div class="col">
-                                            <label class="form-label small fw-bold">Worksheet Name *</label>
-                                            <input type="text" class="form-control form-control-sm" name="worksheet" placeholder="Case sensitive" required>
+                                    <div id="worksheets-section" style="display: none;">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="fw-bold mb-0">Worksheets to Ingest</h6>
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" id="btn-add-worksheet">+ Add Worksheet</button>
                                         </div>
-                                        <div class="col">
-                                            <label class="form-label small fw-bold">Header Location *</label>
-                                            <input type="number" class="form-control form-control-sm" name="header_row" value="1" required>
+                                        <div id="worksheets-container" class="mb-3">
+                                            <!-- Worksheet rows will be added here -->
                                         </div>
                                     </div>
-                                    
-                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none">+ Add Worksheet</button>
                                 </div>
                             </div>
                             
-                            <button type="button" class="btn btn-outline-dark btn-sm">+ Add Upload</button>
-                            
-                            <div class="d-flex justify-content-end gap-2 mt-4">
-                                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
-                                <button type="submit" class="btn btn-dark btn-sm px-4">Upload</button>
+                            <div class="d-flex justify-content-end gap-2">
+                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary px-5">Upload & Process</button>
                             </div>
                         </form>
                     </div>
@@ -465,14 +562,56 @@ window.showUploadModalOld = () => {
     const modal = new bootstrap.Modal(document.getElementById('uploadModal'));
     modal.show();
 
+    document.getElementById('btn-add-worksheet').onclick = () => addWorksheetRow();
+
     document.getElementById('fileInput').onchange = (e) => {
-        const fileName = e.target.files[0]?.name;
-        document.getElementById('file-name').textContent = fileName || '';
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        document.getElementById('file-name').textContent = file.name;
+        document.getElementById('worksheets-section').style.display = 'block';
+        
+        // Clear existing rows
+        document.getElementById('worksheets-container').innerHTML = '';
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            currentWorkbook = XLSX.read(data, { type: 'array' });
+            
+            if (currentWorkbook.SheetNames.length > 0) {
+                currentWorkbook.SheetNames.forEach(sheet => {
+                    addWorksheetRow(sheet, 1);
+                });
+            } else {
+                addWorksheetRow(file.name, 1);
+            }
+        };
+        reader.readAsArrayBuffer(file);
     };
 
     document.getElementById('upload-form').onsubmit = async (e) => {
         e.preventDefault();
-        const formData = new FormData(e.target);
+        const form = e.target;
+        const formData = new FormData(form);
+        
+        // Collect worksheets and header rows
+        const worksheetInputs = form.querySelectorAll('input[name="worksheet[]"]');
+        const headerRowInputs = form.querySelectorAll('input[name="header_row[]"]');
+        
+        const worksheets = [];
+        for (let i = 0; i < worksheetInputs.length; i++) {
+            worksheets.push({
+                name: worksheetInputs[i].value,
+                header_row: parseInt(headerRowInputs[i].value) || 1
+            });
+        }
+        
+        formData.append('worksheets_json', JSON.stringify(worksheets));
+        
+        // Remove individual worksheet/header_row from formData as we are using JSON
+        formData.delete('worksheet[]');
+        formData.delete('header_row[]');
         
         const res = await fetch('/prepare/upload', {
             method: 'POST',
@@ -481,17 +620,21 @@ window.showUploadModalOld = () => {
         
         if (res.ok) {
             modal.hide();
-            if (window.currentModule === 'prepare') {
+            const data = await res.json();
+            if (callback) {
+                callback(data);
+            } else if (window.currentModule === 'prepare') {
                 window.renderPrepare();
             } else {
                 window.renderPrepareOld();
+                window.setPrepareOldStep('map');
             }
         } else {
             const err = await res.json();
             alert('Upload failed: ' + err.detail);
         }
     };
-}
+};
 
 window.showManualInputModal = async () => {
     const entitiesRes = await fetch('/data-dictionary/entities');

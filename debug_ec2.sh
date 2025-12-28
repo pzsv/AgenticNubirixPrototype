@@ -47,6 +47,17 @@ echo "[4/4] Environment Info:"
 PUBLIC_IP=$(curl -s http://checkip.amazonaws.com || curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
 echo "  Public IP: $PUBLIC_IP"
 echo "  URL: http://$PUBLIC_IP:8000"
+
+# 5. Check for recent 404 errors (missing files)
+echo ""
+echo "[5/5] Checking for missing files (404 errors) in logs..."
+if sudo journalctl -u nubirix --since "1 hour ago" | grep -q "404 Not Found"; then
+    echo "WARNING: Found 404 errors in the last hour. Some files might be missing!"
+    sudo journalctl -u nubirix --since "1 hour ago" | grep "404 Not Found" | tail -n 5
+else
+    echo "OK: No recent 404 errors found."
+fi
+
 echo ""
 echo "Troubleshooting Tips:"
 echo "- If [1/4] failed: The app crashed on startup. Run 'journalctl -u nubirix -e' to see why."

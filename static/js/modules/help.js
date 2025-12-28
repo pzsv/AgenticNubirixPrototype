@@ -10,6 +10,40 @@
             output: 'Raw "Discovered Data" entities stored in the platform, maintaining a verbatim record of the source data.',
             correlation: 'Feeds raw data into the **Standardisation** phase. Without ingestion, there is no data to process.'
         },
+        'help-prepare-ingestion-sources': {
+            title: 'Ingestion: Active Data Sources',
+            icon: 'bi-database',
+            description: 'This screen shows all the data sources that have been successfully ingested and are now part of the discovery inventory.',
+            details: [
+                {
+                    label: 'Active Sources',
+                    content: 'A list of all discovery files, scans, and CMDB connections that are currently contributing data.'
+                },
+                {
+                    label: 'Ingestion Methods',
+                    content: 'You can use File Ingestion, Network Scans, CMDB Connect, or Manual Entry to bring data into the platform.'
+                },
+                {
+                    label: 'Filtering',
+                    content: 'Use the method cards at the top to filter the active sources list by their ingestion type.'
+                }
+            ]
+        },
+        'help-prepare-ingestion-discovered': {
+            title: 'Ingestion: Discovered Data',
+            icon: 'bi-file-earmark-text',
+            description: 'This view provides a direct look at the raw discovery records across all ingestion methods.',
+            details: [
+                {
+                    label: 'Raw Records',
+                    content: 'Every server, application, and database record as it was initially discovered, before any standardisation.'
+                },
+                {
+                    label: 'Source Tracking',
+                    content: 'Shows exactly which file or scan produced each record, along with the timestamp of discovery.'
+                }
+            ]
+        },
         'help-prepare-standardisation': {
             title: 'Prepare: Standardisation',
             icon: 'bi-diagram-3',
@@ -20,10 +54,116 @@
             output: 'Standardized records where all attributes are aligned to the platform\'s internal data model.',
             correlation: 'Prerequisite for **Normalisation**. It bridges the gap between raw source data and internal data structures.'
         },
+        'help-prepare-standardisation-sources': {
+            title: 'Standardisation: Data Sources',
+            icon: 'bi-database',
+            description: 'This screen lists all the data sources that have been ingested into the platform and are awaiting standardisation.',
+            details: [
+                {
+                    label: 'What are Data Sources?',
+                    content: 'Data Sources represent the origins of your discovery data, such as RVTools exports, CMDB dumps, or cloud-native discovery tool outputs.'
+                },
+                {
+                    label: 'Source Types',
+                    content: 'Sources can be "File" (Excel/CSV), "Network" (scanned data), "CMDB" (connected databases), or "Manual" (direct entry).'
+                },
+                {
+                    label: 'Worksheet/Data',
+                    content: 'Indicates the specific sheet name from an Excel file or the data category for other source types.'
+                },
+                {
+                    label: 'Quality Rating',
+                    content: 'A visual indicator of the data\'s completeness and reliability. High quality means fewer missing fields and consistent formatting.'
+                },
+                {
+                    label: 'Status',
+                    content: 'Shows whether the data is "Success" (ready for mapping), "Warning" (needs attention), or "Failed" (ingestion error).'
+                },
+                {
+                    label: 'Actions',
+                    content: '"Review" allows you to see the raw data, while "Map Fields" takes you to the field-level standardisation screen.'
+                }
+            ]
+        },
+        'help-prepare-standardisation-entities': {
+            title: 'Standardisation: Data Entities',
+            icon: 'bi-diagram-2',
+            description: 'Data Entities are the logical definitions of objects in Nubirix, such as Servers, Databases, or Applications.',
+            details: [
+                {
+                    label: 'What are Entities?',
+                    content: 'An entity is a collection of related fields that define a specific type of asset. For example, a "Server" entity includes Hostname, CPU, RAM, and OS.'
+                },
+                {
+                    label: 'The Entity Button',
+                    content: 'Clicking an entity name allows you to "Drill Down" into the specific fields and discovery records associated with that entity type.'
+                },
+                {
+                    label: 'How to Drill Down',
+                    content: 'Use the "View Fields" action to see all attributes defined for this entity and how many sources are providing data for them.'
+                },
+                {
+                    label: 'Key Fields',
+                    content: 'Key fields (marked with a key icon) are unique identifiers used to correlate the same asset across different data sources.'
+                }
+            ]
+        },
+        'help-prepare-standardisation-dictionary': {
+            title: 'Standardisation: Data Dictionary',
+            icon: 'bi-book',
+            description: 'The Data Dictionary is the master catalog of every field known to the platform.',
+            details: [
+                {
+                    label: 'Master Schema',
+                    content: 'It defines the "target" structure that all source data must be mapped to during standardisation.'
+                },
+                {
+                    label: 'Field Definitions',
+                    content: 'Each entry includes the field name, data type (String, Integer, etc.), and which entities it belongs to.'
+                },
+                {
+                    label: 'Standard Values',
+                    content: 'Defines the allowed values for specific fields (e.g., OS types or Environment names) to ensure data consistency.'
+                }
+            ]
+        },
+        'help-prepare-standardisation-discovered': {
+            title: 'Standardisation: Discovered Data',
+            icon: 'bi-file-earmark-text',
+            description: 'This view shows the raw, un-standardized records as they were received from the discovery sources.',
+            details: [
+                {
+                    label: 'Verbatim Records',
+                    content: 'It provides a "read-only" look at the raw input before any transformations or mappings are applied.'
+                },
+                {
+                    label: 'Debugging Tools',
+                    content: 'Use this to verify if a missing value in the "Golden Record" was actually present in the source data.'
+                },
+                {
+                    label: 'Source Correlation',
+                    content: 'Shows which specific discovery file or scan produced each record.'
+                }
+            ]
+        },
         'help-prepare-normalisation': {
             title: 'Prepare: Normalisation',
             icon: 'bi-magic',
-            description: 'Normalisation involves validating data values and transforming them into standardized units and formats.',
+            description: 'Normalisation is the process of aligning inconsistent data values from different sources into a single, standardized format.',
+            details: [
+                {
+                    label: 'Value Alignment',
+                    content: 'Discovery tools often use different labels for the same thing (e.g., "PROD", "Production", "p"). Normalisation maps these all to a single standard value.'
+                },
+                {
+                    label: 'Data Issues',
+                    content: 'The platform identifies fields with inconsistent values that need your attention. You can see the frequency of each raw value to help decide on the correct mapping.'
+                },
+                {
+                    label: 'Unit Conversion',
+                    content: 'Normalisation also handles technical conversions, such as making sure all Memory values are in GB and all Storage values are in TB.'
+                }
+            ],
             significance: 'Calculations for TCO and right-sizing require uniform data. Normalisation converts values like "16384 MB" and "16 GB" into a single unit (e.g., GB) and validates values against allowed lists.',
             input: 'Standardized records from the previous phase.',
             dataUsed: 'Data Dictionary validation rules, transformation logic (unit conversions), and allowed value lists.',
@@ -33,8 +173,22 @@
         'help-prepare-aggregation': {
             title: 'Prepare: Aggregation',
             icon: 'bi-combine',
-            description: 'Aggregation merges multiple data points from different sources for the same Configuration Item (CI) into a single "Golden Record".',
-            significance: 'Large estates often have overlapping discovery data. Aggregation resolves conflicts (e.g., Source A says 4 CPUs, Source B says 8) using intelligent source priority rules.',
+            description: 'Aggregation resolves conflicts when multiple data sources provide information about the same Configuration Item (CI).',
+            details: [
+                {
+                    label: 'Conflict Resolution',
+                    content: 'If Source A says a server has 4 CPUs and Source B says it has 8, Aggregation uses priority rules (Trust Scores) to determine the "Golden" value.'
+                },
+                {
+                    label: 'Golden Records',
+                    content: 'The output of this phase is a "Golden Record" — the most accurate, consolidated view of an asset across all known discovery data.'
+                },
+                {
+                    label: 'Gaps & Overlaps',
+                    content: 'Identifies where data is missing from preferred sources but available in secondary ones, allowing you to fill gaps in your estate knowledge.'
+                }
+            ],
+            significance: 'Large estates often have overlapping discovery data. Aggregation resolves conflicts using intelligent source priority rules.',
             input: 'Multiple normalized records that refer to the same physical or logical asset.',
             dataUsed: 'Source priority rules (Trust Scores) and conflict resolution logic defined in the project settings.',
             output: 'A single, high-fidelity "Golden Record" for each Configuration Item, representing the most accurate known state.',
@@ -43,17 +197,64 @@
         'help-prepare-publish': {
             title: 'Prepare: Publish',
             icon: 'bi-cloud-upload',
-            description: 'Publishing is the final step of the Prepare pipeline, where Golden Records are promoted to the active migration inventory.',
+            description: 'Publishing promotes your validated Golden Records to the active migration inventory.',
+            details: [
+                {
+                    label: 'Final Validation',
+                    content: 'Ensures all mandatory fields are present and that the data meets the quality threshold required for migration planning.'
+                },
+                {
+                    label: 'Data Lock',
+                    content: 'Once published, the data is locked into the migration pipeline, ensuring that planners and engineers are working with a stable "point-in-time" snapshot.'
+                },
+                {
+                    label: 'Hand-off',
+                    content: 'Successfully published CIs immediately become available in the Map and Plan modules for technical and wave planning.'
+                }
+            ],
             significance: 'This step separates "data in preparation" from "data ready for planning". It provides a clean hand-off point for the migration architects.',
             input: 'Consolidated Golden Records from the Aggregation phase.',
             dataUsed: 'Final integrity checks and mandatory field validations.',
             output: 'Active Configuration Items (CIs) visible in the Map and Plan modules.',
             correlation: 'Enables the **Map** phase to begin. Once published, assets are locked in their "Golden" state for migration planning.'
         },
+        'help-map-source-data': {
+            title: 'Map: Source Data',
+            icon: 'bi-database-check',
+            description: 'This screen displays the Golden Records that have been published from the Prepare phase and are ready to be assigned to AWIs.',
+            details: [
+                {
+                    label: 'Published CIs',
+                    content: 'These are the "high-fidelity" records of your servers, databases, and other infrastructure assets.'
+                },
+                {
+                    label: 'Mapping Status',
+                    content: 'Indicates whether an asset has already been assigned to an Application Workload Instance (AWI).'
+                },
+                {
+                    label: 'Technical Specs',
+                    content: 'A summary of the hardware and software configuration of each asset, used to inform target sizing.'
+                }
+            ]
+        },
         'help-map-awis': {
             title: 'Map: AWIs (Application Workload Instances)',
             icon: 'bi-box-seam',
             description: 'AWIs represent the logical grouping of Configuration Items (like servers and databases) into functional business units.',
+            details: [
+                {
+                    label: 'What is an AWI?',
+                    content: 'AWIs are the primary containers for migration. Instead of moving individual servers, we move applications and all their associated infrastructure together.'
+                },
+                {
+                    label: 'AWI Components',
+                    content: 'An AWI can contain multiple servers, databases, and other CIs. You can add or remove components to accurately reflect the application\'s footprint.'
+                },
+                {
+                    label: 'Metadata',
+                    content: 'AWIs include business-level information like Application Name, Criticality, Owner, and Business Unit.'
+                }
+            ],
             significance: 'We don\'t migrate servers; we migrate applications. Defining AWIs allows the team to plan around business services rather than just infrastructure.',
             input: 'Published CIs (Servers, DBs, etc.) and application metadata.',
             dataUsed: 'Application-to-Infrastructure relationship data, business service definitions.',
@@ -64,6 +265,20 @@
             title: 'Map: Dependency Links',
             icon: 'bi-diagram-3-fill',
             description: 'Dependency Links document the technical and logical relationships between different AWIs.',
+            details: [
+                {
+                    label: 'Technical Dependencies',
+                    content: 'Represent network-level communications between applications (e.g., App A talks to Database B over port 1433).'
+                },
+                {
+                    label: 'Logical Dependencies',
+                    content: 'Represent business-level relationships where one application requires another to function, even if there is no direct network traffic.'
+                },
+                {
+                    label: 'Impact Analysis',
+                    content: 'Understanding these links is crucial for determining which applications MUST move together to avoid service disruption.'
+                }
+            ],
             significance: 'Understanding dependencies is critical to avoiding "broken links" during migration. It identifies which applications talk to each other and must be considered together.',
             input: 'Defined AWIs and network traffic analysis (flows).',
             dataUsed: 'Port/protocol communications, API calls, and shared middleware dependencies.',
@@ -74,6 +289,20 @@
             title: 'Map: S2Ts (Source-to-Target)',
             icon: 'bi-arrow-right-circle',
             description: 'Source-to-Target mapping defines the destination environment and the technical strategy (7 Rs) for each AWI.',
+            details: [
+                {
+                    label: 'The 7 Rs',
+                    content: 'Each application is assigned a strategy: Rehost, Relocate, Replatform, Refactor, Repurchase, Retire, or Retain.'
+                },
+                {
+                    label: 'Target Environment',
+                    content: 'Specify where the application is moving to (e.g., AWS Production, Azure West Europe, or a new Internal Data Center).'
+                },
+                {
+                    label: 'Right-sizing',
+                    content: 'Compare source resource usage (CPU/RAM) with target instance types to optimize cost and performance.'
+                }
+            ],
             significance: 'S2T mapping turns a discovery record into a migration plan. It determines whether an app is being Rehosted, Replatformed, or Retired.',
             input: 'AWIs and available Target Environments.',
             dataUsed: 'Migration Principles (7 Rs), Target Cloud capabilities, and cost/effort estimates.',
@@ -84,6 +313,20 @@
             title: 'Map: MDGs (Move Dependency Groups)',
             icon: 'bi-intersect',
             description: 'MDGs are clusters of AWIs with high inter-dependency that should ideally be migrated in the same wave.',
+            details: [
+                {
+                    label: 'Move Units',
+                    content: 'MDGs represent the "minimum viable move unit". Moving an entire MDG together ensures all internal dependencies are preserved.'
+                },
+                {
+                    label: 'Bundling Logic',
+                    content: 'Applications are bundled into MDGs based on their technical dependency strength and shared infrastructure (e.g., a shared database cluster).'
+                },
+                {
+                    label: 'Wave Input',
+                    content: 'MDGs are the primary building blocks used during the Wave Planning phase.'
+                }
+            ],
             significance: 'MDGs minimize risk and post-migration performance issues by ensuring that tightly coupled systems move together, maintaining their low-latency connections.',
             input: 'AWIs and their associated Dependency Links.',
             dataUsed: 'Dependency strength algorithms and shared infrastructure constraints.',
@@ -94,6 +337,20 @@
             title: 'Plan: Migration Waves',
             icon: 'bi-calendar-event',
             description: 'The Plan phase involves organizing AWIs and MDGs into Migration Waves (scheduled move windows).',
+            details: [
+                {
+                    label: 'Wave Scheduling',
+                    content: 'Define specific date windows for migrations. Waves can be organized by business unit, technical criticality, or location.'
+                },
+                {
+                    label: 'Capacity Planning',
+                    content: 'Ensure that the number of servers and applications in a wave doesn\'t exceed the available network bandwidth or engineering resources.'
+                },
+                {
+                    label: 'Blackout Dates',
+                    content: 'Mark periods where migrations are prohibited due to business events (e.g., end-of-quarter or holiday sales).'
+                }
+            ],
             significance: 'Effective planning balances the migration workload over time, ensuring that technical resources (like network bandwidth and migration engineers) are not overwhelmed.',
             input: 'AWIs, MDGs, and target migration dates.',
             dataUsed: 'Resource availability, business blackout dates, and workload priority.',
@@ -104,6 +361,20 @@
             title: 'Move: Execution Runbooks',
             icon: 'bi-arrow-repeat',
             description: 'The Move phase focuses on generating and executing detailed technical runbooks for the migration window.',
+            details: [
+                {
+                    label: 'Technical Runbooks',
+                    content: 'Step-by-step task lists for the migration team, including pre-flight checks, data replication, and cutover activities.'
+                },
+                {
+                    label: 'Execution Tracking',
+                    content: 'Monitor the real-time status of each task in the runbook, allowing project managers to track progress during the migration window.'
+                },
+                {
+                    label: 'Rollback Procedures',
+                    content: 'Pre-defined steps to safely revert the migration in case of critical failures.'
+                }
+            ],
             significance: 'Runbooks provide a repeatable, standardized process for the technical move, reducing the chance of human error during high-pressure migration windows.',
             input: 'Planned Migration Waves and AWIs.',
             dataUsed: 'Technical migration templates based on the assigned 7 Rs strategy.',
@@ -114,16 +385,158 @@
             title: 'Evaluate: Post-Migration Analysis',
             icon: 'bi-bar-chart',
             description: 'Evaluate is the final phase where the outcomes of the migration are analyzed and reported.',
+            details: [
+                {
+                    label: 'Success Metrics',
+                    content: 'Analyze whether the migration met its targets for time, budget, and performance.'
+                },
+                {
+                    label: 'TCO & ROI',
+                    content: 'Calculate the actual cost savings and return on investment achieved by moving to the target environment.'
+                },
+                {
+                    label: 'ESG Reporting',
+                    content: 'Measure improvements in energy efficiency and carbon footprint reduction post-migration.'
+                }
+            ],
             significance: 'It proves the success of the project by showing TCO savings, ESG improvements, and verifying that all workloads reached their target destination safely.',
             input: 'Completed Migration Runbooks and post-migration asset state.',
             dataUsed: 'Financial models (CapEx vs OpEx), carbon footprint data, and project milestones.',
             output: 'Executive dashboards, savings reports, and lessons learned.',
             correlation: 'Provides feedback for future migration projects and validates the initial business case.'
         },
+        'help-environments': {
+            title: 'Configuration: Environments',
+            icon: 'bi-database',
+            description: 'Define and manage the source and target environments for your migration project.',
+            details: [
+                {
+                    label: 'Source Environments',
+                    content: 'Where your data is currently hosted (e.g., London DC1, Azure Legacy, On-prem VMware).'
+                },
+                {
+                    label: 'Target Environments',
+                    content: 'The destinations for your workloads (e.g., AWS Landing Zone, GCP Production, New Co-lo Facility).'
+                },
+                {
+                    label: 'Environment Metadata',
+                    content: 'Store specific details about each environment, such as location, security level, and contact person.'
+                }
+            ]
+        },
+        'help-move-principles': {
+            title: 'Configuration: Move Principles',
+            icon: 'bi-journal-text',
+            description: 'The Move Principles (7 Rs) define the technical strategy for migrating each application.',
+            details: [
+                {
+                    label: '7 Rs Strategy',
+                    content: 'Standard strategies include Rehost, Relocate, Replatform, Refactor, Repurchase, Retire, and Retain.'
+                },
+                {
+                    label: 'Customizing Strategies',
+                    content: 'You can customize the descriptions and rules for each strategy to match your organization\'s cloud framework.'
+                },
+                {
+                    label: 'Impact on Runbooks',
+                    content: 'The chosen strategy for an AWI determines which task templates are used to generate its migration runbook.'
+                }
+            ]
+        },
+        'help-score-card': {
+            title: 'Configuration: Score Card',
+            icon: 'bi-check2-square',
+            description: 'The Score Card is a quantitative framework for assessing migration readiness and risk.',
+            details: [
+                {
+                    label: 'Scoring Factors',
+                    content: 'Define the criteria used to judge readiness, such as "Business Criticality", "Technical Complexity", and "Data Sensitivity".'
+                },
+                {
+                    label: 'Weighting',
+                    content: 'Assign importance to different factors to calculate an overall readiness score (0-100%).'
+                },
+                {
+                    label: 'Readiness Thresholds',
+                    content: 'Set targets that an AWI must meet before it can be scheduled for a migration wave.'
+                }
+            ]
+        },
+        'help-discovered-data': {
+            title: 'Data Management: Discovered Data',
+            icon: 'bi-file-earmark-text',
+            description: 'The master inventory of all raw data records discovered across all sources.',
+            details: [
+                {
+                    label: 'Cross-Source View',
+                    content: 'A unified list of every asset record discovered, regardless of the ingestion method used.'
+                },
+                {
+                    label: 'Data Integrity',
+                    content: 'Review the original source values before any platform-level transformations have been applied.'
+                },
+                {
+                    label: 'Search & Export',
+                    content: 'Search across all discovery results and export raw data for external analysis or reporting.'
+                }
+            ]
+        },
+        'help-data-dictionary': {
+            title: 'Data Management: Data Dictionary',
+            icon: 'bi-book',
+            description: 'The central definition of all data structures and validation rules in the project.',
+            details: [
+                {
+                    label: 'Schema Definition',
+                    content: 'Manage the fields, types, and descriptions for every asset attribute known to the platform.'
+                },
+                {
+                    label: 'Validation Rules',
+                    content: 'Define which values are allowed and how they should be formatted to ensure high data quality.'
+                },
+                {
+                    label: 'Lookup Lists',
+                    content: 'Maintain standardized sets of values for dropdowns and automated normalisation.'
+                }
+            ]
+        },
+        'help-data-entities': {
+            title: 'Data Management: Data Entities',
+            icon: 'bi-diagram-2',
+            description: 'Define the logical models for different types of migration assets.',
+            details: [
+                {
+                    label: 'Entity Modeling',
+                    content: 'Configure entities like Servers, Applications, Databases, and Storage Volumes.'
+                },
+                {
+                    label: 'Attribute Assignment',
+                    content: 'Group fields from the Data Dictionary into specific entities to build their comprehensive data profiles.'
+                },
+                {
+                    label: 'Relationship Mapping',
+                    content: 'Define how different entities relate to each other (e.g., "Database runs on Server").'
+                }
+            ]
+        },
         'help-admin-project': {
             title: 'Admin: Project Management',
             icon: 'bi-kanban',
             description: 'Project Management allows administrators to control the high-level lifecycle of migration projects.',
+            details: [
+                {
+                    label: 'Project Creation',
+                    content: 'Set up new projects for different clients or internal migration initiatives.'
+                },
+                {
+                    label: 'Global Settings',
+                    content: 'Configure parameters that apply to all modules within the project.'
+                },
+                {
+                    label: 'Archiving',
+                    content: 'Safely archive completed projects to maintain platform performance while preserving historical data.'
+                }
+            ],
             significance: 'Ensures that multiple migrations can be managed within the same platform without data contamination.',
             input: 'Project names, client details, and global parameters.',
             dataUsed: 'Project metadata and archiving settings.',
@@ -134,6 +547,20 @@
             title: 'Admin: User Management',
             icon: 'bi-people',
             description: 'User Management controls who can access the platform and what actions they can perform.',
+            details: [
+                {
+                    label: 'User Roles',
+                    content: 'Assign roles like Super Admin, Architect, Analyst, or Viewer to restrict access based on job function.'
+                },
+                {
+                    label: 'Feature Access',
+                    content: 'Fine-grained control over who can read, write, or delete data in specific modules (e.g., Prepare vs. Move).'
+                },
+                {
+                    label: 'Audit Trails',
+                    content: 'Track user activity across the platform for security and compliance reporting.'
+                }
+            ],
             significance: 'Secures sensitive migration data by ensuring only authorized personnel can view or edit project information.',
             input: 'User credentials and role assignments.',
             dataUsed: 'Role-Based Access Control (RBAC) definitions.',
@@ -144,6 +571,20 @@
             title: 'Admin: Process Failures',
             icon: 'bi-exclamation-triangle',
             description: 'Process Failures is a troubleshooting module that tracks background errors and task failures.',
+            details: [
+                {
+                    label: 'Error Tracking',
+                    content: 'View detailed logs and stack traces for failed data ingestions, normalization jobs, or network scans.'
+                },
+                {
+                    label: 'Retry Mechanisms',
+                    content: 'Attempt to re-run failed processes after correcting data issues or resolving system timeouts.'
+                },
+                {
+                    label: 'System Health',
+                    content: 'Get a high-level view of the platform\'s processing pipeline health and identify recurring bottlenecks.'
+                }
+            ],
             significance: 'Critical for maintaining data integrity during complex automated pipelines like Normalisation and Aggregation.',
             input: 'Error logs and system exceptions.',
             dataUsed: 'Background job metadata and stack traces.',
@@ -613,13 +1054,28 @@
                                 <h4 class="fw-bold mb-3">What does this mean?</h4>
                                 <p class="lead text-muted">${content.description}</p>
                                 
-                                <hr class="my-4">
-                                
-                                <h4 class="fw-bold mb-3">Significance</h4>
-                                <p>${content.significance}</p>
+                                ${content.significance ? `
+                                    <hr class="my-4">
+                                    <h4 class="fw-bold mb-3">Significance</h4>
+                                    <p>${content.significance}</p>
+                                ` : ''}
+
+                                ${content.details ? `
+                                    <hr class="my-4">
+                                    <h4 class="fw-bold mb-4">Detailed Breakdown</h4>
+                                    <div class="row g-4">
+                                        ${content.details.map(detail => `
+                                            <div class="col-12">
+                                                <h6 class="fw-bold text-primary mb-2">${detail.label}</h6>
+                                                <p class="text-muted small mb-0">${detail.content}</p>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
 
+                        ${content.input ? `
                         <div class="row g-4 mb-4">
                             <div class="col-md-6">
                                 <div class="card h-100 border-0 shadow-sm">
@@ -654,6 +1110,7 @@
                                 </div>
                             </div>
                         </div>
+                        ` : ''}
                     </div>
 
                     <div class="col-lg-4">

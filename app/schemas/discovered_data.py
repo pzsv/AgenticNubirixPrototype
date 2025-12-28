@@ -19,8 +19,10 @@ class DiscoveredDataEntityBase(BaseModel):
     source_type: str
     user: str
     data_entity_name: str
+    data_source_id: Optional[str] = None
+    source_name: Optional[str] = None
     created_time: Optional[str] = None
-    status: str = "Ingestion"
+    status: str = "Ingested"
 
 class DiscoveredDataEntityCreate(DiscoveredDataEntityBase):
     pass

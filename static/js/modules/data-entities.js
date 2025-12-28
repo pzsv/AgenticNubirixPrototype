@@ -1,6 +1,7 @@
 // --- Module: Data Entities ---
-window.renderDataEntities = async function(searchFilter = '', sortCol = 'name', sortDir = 'asc', currentPage = 1) {
-    const contentArea = document.getElementById('main-area');
+window.renderDataEntities = async function(searchFilter = '', sortCol = 'name', sortDir = 'asc', currentPage = 1, containerId = null) {
+    const contentArea = containerId ? document.getElementById(containerId) : document.getElementById('main-area');
+    const isNested = containerId && containerId !== 'main-area';
     const response = await fetch('/data-entities');
     let entities = await response.json();
 
@@ -33,14 +34,47 @@ window.renderDataEntities = async function(searchFilter = '', sortCol = 'name', 
     const start = (currentPage - 1) * itemsPerPage;
     const paginatedEntities = entities.slice(start, start + itemsPerPage);
 
-    let html = `
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold">Data Entities</h3>
-            <button class="btn btn-primary" id="btn-add-entity">
-                <i class="bi bi-plus-lg me-1"></i> Add Entity
-            </button>
-        </div>
+    let html = '';
+    
+    if (!isNested) {
+        html += `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold">Data Entities</h3>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" id="btn-download-entities">
+                        <i class="bi bi-download me-1"></i> Download Data Entities
+                    </button>
+                    <button class="btn btn-outline-primary" id="btn-upload-entities">
+                        <i class="bi bi-upload me-1"></i> Upload Data Entities
+                    </button>
+                    <button class="btn btn-primary" id="btn-add-entity">
+                        <i class="bi bi-plus-lg me-1"></i> Add Entity
+                    </button>
+                    <input type="file" id="input-upload-entities" style="display:none" accept=".xlsx">
+                </div>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0">Data Entities</h4>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary btn-sm" id="btn-download-entities">
+                        <i class="bi bi-download me-1"></i> Download
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" id="btn-upload-entities">
+                        <i class="bi bi-upload me-1"></i> Upload
+                    </button>
+                    <button class="btn btn-primary btn-sm" id="btn-add-entity">
+                        <i class="bi bi-plus-lg me-1"></i> Add Entity
+                    </button>
+                    <input type="file" id="input-upload-entities" style="display:none" accept=".xlsx">
+                </div>
+            </div>
+        `;
+    }
 
+    html += `
         <div class="card mb-4 border-0 shadow-sm">
             <div class="card-body">
                 <div class="input-group">
@@ -55,14 +89,14 @@ window.renderDataEntities = async function(searchFilter = '', sortCol = 'name', 
                 <table class="table table-hover mb-0 align-middle">
                     <thead class="bg-light">
                         <tr>
-                            <th class="ps-4" style="cursor:pointer" onclick="window.renderDataEntities('${searchFilter}', 'name', '${sortCol === 'name' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                            <th class="ps-4" style="cursor:pointer" onclick="window.renderDataEntities('${searchFilter}', 'name', '${sortCol === 'name' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage}, ${containerId ? "'"+containerId+"'" : 'null'})">
                                 Name ${sortCol === 'name' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
                             </th>
-                            <th style="cursor:pointer" onclick="window.renderDataEntities('${searchFilter}', 'id', '${sortCol === 'id' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                            <th style="cursor:pointer" onclick="window.renderDataEntities('${searchFilter}', 'id', '${sortCol === 'id' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage}, ${containerId ? "'"+containerId+"'" : 'null'})">
                                 ID ${sortCol === 'id' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
                             </th>
                             <th>Key Field</th>
-                            <th style="cursor:pointer" onclick="window.renderDataEntities('${searchFilter}', 'fields_count', '${sortCol === 'fields_count' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                            <th style="cursor:pointer" onclick="window.renderDataEntities('${searchFilter}', 'fields_count', '${sortCol === 'fields_count' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage}, ${containerId ? "'"+containerId+"'" : 'null'})">
                                 Fields Count ${sortCol === 'fields_count' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
                             </th>
                             <th width="150" class="text-end pe-4">Actions</th>
@@ -73,7 +107,7 @@ window.renderDataEntities = async function(searchFilter = '', sortCol = 'name', 
                             const keyField = entity.fields.find(f => f.id === entity.key_field_id);
                             return `
                                 <tr>
-                                    <td class="ps-4 fw-bold text-primary" style="cursor: pointer" onclick="window.renderDataEntityFields('${entity.id}')">${entity.name}</td>
+                                    <td class="ps-4 fw-bold text-primary" style="cursor: pointer" onclick="window.renderDataEntityFields('${entity.id}', '', 'field_name', 'asc', 1, ${containerId ? "'"+containerId+"'" : 'null'})">${entity.name}</td>
                                     <td><small class="text-muted">${entity.id}</small></td>
                                     <td>${keyField ? keyField.name : '<span class="text-muted">None</span>'}</td>
                                     <td><span class="badge bg-light text-dark border">${entity.fields.length}</span></td>
@@ -93,15 +127,15 @@ window.renderDataEntities = async function(searchFilter = '', sortCol = 'name', 
                 <nav aria-label="Page navigation">
                     <ul class="pagination pagination-sm mb-0 justify-content-center">
                         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                            <a class="page-link" href="#" onclick="window.renderDataEntities('${searchFilter}', '${sortCol}', '${sortDir}', ${currentPage - 1}); return false;">Previous</a>
+                            <a class="page-link" href="#" onclick="window.renderDataEntities('${searchFilter}', '${sortCol}', '${sortDir}', ${currentPage - 1}, ${containerId ? "'"+containerId+"'" : 'null'}); return false;">Previous</a>
                         </li>
                         ${Array.from({length: totalPages}, (_, i) => i + 1).map(p => `
                             <li class="page-item ${p === currentPage ? 'active' : ''}">
-                                <a class="page-link" href="#" onclick="window.renderDataEntities('${searchFilter}', '${sortCol}', '${sortDir}', ${p}); return false;">${p}</a>
+                                <a class="page-link" href="#" onclick="window.renderDataEntities('${searchFilter}', '${sortCol}', '${sortDir}', ${p}, ${containerId ? "'"+containerId+"'" : 'null'}); return false;">${p}</a>
                             </li>
                         `).join('')}
                         <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                            <a class="page-link" href="#" onclick="window.renderDataEntities('${searchFilter}', '${sortCol}', '${sortDir}', ${currentPage + 1}); return false;">Next</a>
+                            <a class="page-link" href="#" onclick="window.renderDataEntities('${searchFilter}', '${sortCol}', '${sortDir}', ${currentPage + 1}, ${containerId ? "'"+containerId+"'" : 'null'}); return false;">Next</a>
                         </li>
                     </ul>
                 </nav>
@@ -148,7 +182,7 @@ window.renderDataEntities = async function(searchFilter = '', sortCol = 'name', 
         searchInput.focus();
         searchInput.setSelectionRange(searchFilter.length, searchFilter.length);
         searchInput.addEventListener('input', debounce((e) => {
-            window.renderDataEntities(e.target.value, sortCol, sortDir);
+            window.renderDataEntities(e.target.value, sortCol, sortDir, 1, containerId);
         }, 500));
     }
 
@@ -161,6 +195,45 @@ window.renderDataEntities = async function(searchFilter = '', sortCol = 'name', 
         document.getElementById('entity-id-input').value = '';
         document.getElementById('key-field-select-container').style.display = 'none';
         modal.show();
+    });
+
+    document.getElementById('btn-download-entities').addEventListener('click', () => {
+        window.location.href = '/data-entities/download';
+    });
+
+    document.getElementById('btn-upload-entities').addEventListener('click', () => {
+        document.getElementById('input-upload-entities').click();
+    });
+
+    document.getElementById('input-upload-entities').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!confirm('This will override ALL existing Data Entities and Fields. Are you sure?')) {
+            e.target.value = '';
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/data-entities/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('Data Entities uploaded successfully');
+                window.renderDataEntities(searchFilter, sortCol, sortDir, currentPage, containerId);
+            } else {
+                const error = await response.json();
+                alert('Upload failed: ' + (error.detail || 'Unknown error'));
+            }
+        } catch (error) {
+            alert('Upload failed: ' + error.message);
+        }
+        e.target.value = '';
     });
 
     document.getElementById('entity-form').addEventListener('submit', async (e) => {
@@ -187,7 +260,7 @@ window.renderDataEntities = async function(searchFilter = '', sortCol = 'name', 
 
         if (response.ok) {
             modal.hide();
-            setTimeout(() => window.renderDataEntities(searchFilter, sortCol, sortDir), 300);
+            setTimeout(() => window.renderDataEntities(searchFilter, sortCol, sortDir, currentPage, containerId), 300);
         }
     });
 
@@ -211,14 +284,14 @@ window.renderDataEntities = async function(searchFilter = '', sortCol = 'name', 
         if (confirm('Are you sure you want to delete this entity? Associated fields will lose their entity reference.')) {
             const response = await fetch(`/data-entities/${id}`, { method: 'DELETE' });
             if (response.ok) {
-                window.renderDataEntities(searchFilter, sortCol, sortDir);
+                window.renderDataEntities(searchFilter, sortCol, sortDir, currentPage, containerId);
             }
         }
     };
 };
 
-window.renderDataEntityFields = async function(entityId, searchFilter = '', sortCol = 'name', sortDir = 'asc', currentPage = 1) {
-    const contentArea = document.getElementById('main-area');
+window.renderDataEntityFields = async function(entityId, searchFilter = '', sortCol = 'name', sortDir = 'asc', currentPage = 1, containerId = null) {
+    const contentArea = containerId ? document.getElementById(containerId) : document.getElementById('main-area');
     const entityResponse = await fetch(`/data-entities/${entityId}`);
     const entity = await entityResponse.json();
     
@@ -254,7 +327,7 @@ window.renderDataEntityFields = async function(entityId, searchFilter = '', sort
         <div class="mb-4">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="#" onclick="window.renderDataEntities()">Data Entities</a></li>
+                    <li class="breadcrumb-item"><a href="#" onclick="window.renderDataEntities('', 'name', 'asc', 1, ${containerId ? "'"+containerId+"'" : 'null'})">Data Entities</a></li>
                     <li class="breadcrumb-item active">${entity.name} Fields</li>
                 </ol>
             </nav>
@@ -280,13 +353,13 @@ window.renderDataEntityFields = async function(entityId, searchFilter = '', sort
                 <table class="table table-hover mb-0 align-middle">
                     <thead class="bg-light">
                         <tr>
-                            <th class="ps-4" style="cursor:pointer" onclick="window.renderDataEntityFields('${entityId}', '${searchFilter}', 'name', '${sortCol === 'name' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                            <th class="ps-4" style="cursor:pointer" onclick="window.renderDataEntityFields('${entityId}', '${searchFilter}', 'name', '${sortCol === 'name' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage}, ${containerId ? "'"+containerId+"'" : 'null'})">
                                 Name ${sortCol === 'name' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
                             </th>
-                            <th style="cursor:pointer" onclick="window.renderDataEntityFields('${entityId}', '${searchFilter}', 'anchor', '${sortCol === 'anchor' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                            <th style="cursor:pointer" onclick="window.renderDataEntityFields('${entityId}', '${searchFilter}', 'anchor', '${sortCol === 'anchor' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage}, ${containerId ? "'"+containerId+"'" : 'null'})">
                                 Anchor ${sortCol === 'anchor' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
                             </th>
-                            <th style="cursor:pointer" onclick="window.renderDataEntityFields('${entityId}', '${searchFilter}', 'id', '${sortCol === 'id' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage})">
+                            <th style="cursor:pointer" onclick="window.renderDataEntityFields('${entityId}', '${searchFilter}', 'id', '${sortCol === 'id' && sortDir === 'asc' ? 'desc' : 'asc'}', ${currentPage}, ${containerId ? "'"+containerId+"'" : 'null'})">
                                 ID ${sortCol === 'id' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
                             </th>
                             <th width="150" class="text-end pe-4">Actions</th>
@@ -313,15 +386,15 @@ window.renderDataEntityFields = async function(entityId, searchFilter = '', sort
                 <nav aria-label="Page navigation">
                     <ul class="pagination pagination-sm mb-0 justify-content-center">
                         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                            <a class="page-link" href="#" onclick="window.renderDataEntityFields('${entityId}', '${searchFilter}', '${sortCol}', '${sortDir}', ${currentPage - 1}); return false;">Previous</a>
+                            <a class="page-link" href="#" onclick="window.renderDataEntityFields('${entityId}', '${searchFilter}', '${sortCol}', '${sortDir}', ${currentPage - 1}, ${containerId ? "'"+containerId+"'" : 'null'}); return false;">Previous</a>
                         </li>
                         ${Array.from({length: totalPages}, (_, i) => i + 1).map(p => `
                             <li class="page-item ${p === currentPage ? 'active' : ''}">
-                                <a class="page-link" href="#" onclick="window.renderDataEntityFields('${entityId}', '${searchFilter}', '${sortCol}', '${sortDir}', ${p}); return false;">${p}</a>
+                                <a class="page-link" href="#" onclick="window.renderDataEntityFields('${entityId}', '${searchFilter}', '${sortCol}', '${sortDir}', ${p}, ${containerId ? "'"+containerId+"'" : 'null'}); return false;">${p}</a>
                             </li>
                         `).join('')}
                         <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                            <a class="page-link" href="#" onclick="window.renderDataEntityFields('${entityId}', '${searchFilter}', '${sortCol}', '${sortDir}', ${currentPage + 1}); return false;">Next</a>
+                            <a class="page-link" href="#" onclick="window.renderDataEntityFields('${entityId}', '${searchFilter}', '${sortCol}', '${sortDir}', ${currentPage + 1}, ${containerId ? "'"+containerId+"'" : 'null'}); return false;">Next</a>
                         </li>
                     </ul>
                 </nav>
@@ -367,7 +440,7 @@ window.renderDataEntityFields = async function(entityId, searchFilter = '', sort
         searchInput.focus();
         searchInput.setSelectionRange(searchFilter.length, searchFilter.length);
         searchInput.addEventListener('input', debounce((e) => {
-            window.renderDataEntityFields(entityId, e.target.value, sortCol, sortDir);
+            window.renderDataEntityFields(entityId, e.target.value, sortCol, sortDir, 1, containerId);
         }, 500));
     }
 

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="a41e5967-0a11-4d4c-af17-9c672484a360" name="Changes" comment="trying to fix debug errors">
+      <change beforePath="$PROJECT_DIR$/app/api/data_entities.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/data_entities.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/discovered_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/discovered_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/prepare.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/prepare.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/discovered_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/discovered_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/storage.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/storage.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/debug_ec2.sh" beforeDir="false" afterPath="$PROJECT_DIR$/debug_ec2.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prototype.db" beforeDir="false" afterPath="$PROJECT_DIR$/prototype.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/static/css/style.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/static/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/app.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/data-dictionary.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/data-dictionary.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/data-entities.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/data-entities.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/discovered-data.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/discovered-data.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/help.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/help.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/map.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/map.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/prepare-legacy.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/prepare-legacy.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/modules/prepare-modernized.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/modules/prepare-modernized.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/update_ec2.sh" beforeDir="false" afterPath="$PROJECT_DIR$/update_ec2.sh" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="120" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "pzsv"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/pzsv/AgenticNubirixPrototype.git",
+    "accountId": "ef482638-5752-4e71-9fe9-984925074db6"
+  }
+}]]></component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 5
+}]]></component>
+  <component name="ProjectId" id="37MujzA4mWvYSq3RZJjhYd2YgZU" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.main.executor": "Run",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "ai.playground.ignore.import.keys.banner.in.settings": "true",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "main",
+    "junie.onboarding.icon.badge.shown": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-PY-253.29346.142" />
+        <option value="bundled-python-sdk-f2b7a9f6281b-6e1f45a539f7-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-253.29346.142" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="a41e5967-0a11-4d4c-af17-9c672484a360" name="Changes" comment="" />
+      <created>1766725400112</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1766725400112</updated>
+      <workItem from="1766725401167" duration="19074000" />
+    </task>
+    <task id="LOCAL-00001" summary="recreated">
+      <option name="closed" value="true" />
+      <created>1766725508183</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1766725508183</updated>
+    </task>
+    <task id="LOCAL-00002" summary="commit to ec2">
+      <option name="closed" value="true" />
+      <created>1766728090280</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1766728090280</updated>
+    </task>
+    <task id="LOCAL-00003" summary="update script to ec2 and user management feature added">
+      <option name="closed" value="true" />
+      <created>1766729375673</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1766729375673</updated>
+    </task>
+    <task id="LOCAL-00004" summary="update script to ec2 and user management feature added 2">
+      <option name="closed" value="true" />
+      <created>1766729742744</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1766729742744</updated>
+    </task>
+    <task id="LOCAL-00005" summary="super_admin user seeding correction added">
+      <option name="closed" value="true" />
+      <created>1766730321919</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1766730321921</updated>
+    </task>
+    <task id="LOCAL-00006" summary="trying to repair ability to run on EC2">
+      <option name="closed" value="true" />
+      <created>1766730795590</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1766730795590</updated>
+    </task>
+    <task id="LOCAL-00007" summary="trying to fix debug errors">
+      <option name="closed" value="true" />
+      <created>1766731218393</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1766731218393</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="recreated" />
+    <MESSAGE value="commit to ec2" />
+    <MESSAGE value="update script to ec2 and user management feature added" />
+    <MESSAGE value="update script to ec2 and user management feature added 2" />
+    <MESSAGE value="super_admin user seeding correction added" />
+    <MESSAGE value="trying to repair ability to run on EC2" />
+    <MESSAGE value="trying to fix debug errors" />
+    <option name="LAST_COMMIT_MESSAGE" value="trying to fix debug errors" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/AgenticNubirixPrototype$main.coverage" NAME="main Coverage Results" MODIFIED="1766725434840" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+  </component>
+</project>

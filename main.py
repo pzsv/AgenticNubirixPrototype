@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from app.api import prepare, map as mapping, plan, move, evaluate, data_dictionary, data_entities, discovered_data, environments, move_principles, score_card, users
+from app.api import prepare, map as mapping, plan, move, evaluate, data_dictionary, data_entities, discovered_data, environments, move_principles, score_card, users, admin_project
 from app.config import settings
 import os
 
@@ -24,6 +24,7 @@ app.include_router(environments.router)
 app.include_router(move_principles.router)
 app.include_router(score_card.router)
 app.include_router(users.router)
+app.include_router(admin_project.router)
 
 # Mount Static Files
 base_dir = os.path.dirname(os.path.abspath(__file__))

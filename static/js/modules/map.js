@@ -3,7 +3,7 @@
     if (typeof window === 'undefined') return;
 
 let mapState = {
-    currentStep: 'awis',
+    currentStep: 'source-data',
     viewType: 'table' // 'table' or 'graph'
 };
 
@@ -50,20 +50,24 @@ async function renderMap() {
             <h2 class="mb-0">Map</h2>
             <div class="d-flex align-items-center gap-3">
                 <div class="stepper d-flex align-items-center">
+                    <div class="step ${mapState.currentStep === 'source-data' ? 'active' : ''}" onclick="window.setMapStep('source-data')">
+                        1) Source Data
+                    </div>
+                    <div class="step-line"></div>
                     <div class="step ${mapState.currentStep === 'awis' ? 'active' : ''}" onclick="window.setMapStep('awis')">
-                        1) AWIs
+                        2) AWIs
                     </div>
                     <div class="step-line"></div>
                     <div class="step ${mapState.currentStep === 'dependency-links' ? 'active' : ''}" onclick="window.setMapStep('dependency-links')">
-                        2) Dependency Links
+                        3) Dependency Links
                     </div>
                     <div class="step-line"></div>
                     <div class="step ${mapState.currentStep === 's2ts' ? 'active' : ''}" onclick="window.setMapStep('s2ts')">
-                        3) S2Ts
+                        4) S2Ts
                     </div>
                     <div class="step-line"></div>
                     <div class="step ${mapState.currentStep === 'mdgs' ? 'active' : ''}" onclick="window.setMapStep('mdgs')">
-                        4) MDGs
+                        5) MDGs
                     </div>
                 </div>
 
@@ -442,6 +446,8 @@ async function renderMapStep() {
 
     if (mapState.viewType === 'graph') {
         await renderMapGraph(stepArea);
+    } else if (mapState.currentStep === 'source-data') {
+        await renderSourceData(stepArea);
     } else if (mapState.currentStep === 'awis') {
         await renderMapAWIs(stepArea);
     } else if (mapState.currentStep === 'dependency-links') {
@@ -451,6 +457,90 @@ async function renderMapStep() {
     } else if (mapState.currentStep === 'mdgs') {
         await renderMapMDGs(stepArea);
     }
+}
+
+async function renderSourceData(container) {
+    const [entitiesRes, cisRes] = await Promise.all([
+        fetch('/data-entities'),
+        fetch('/prepare/items')
+    ]);
+    const entities = await entitiesRes.json();
+    const cis = await cisRes.json();
+
+    // Group CIs by type
+    const groupedCis = {};
+    cis.forEach(ci => {
+        const type = ci.type.toLowerCase();
+        if (!groupedCis[type]) {
+            groupedCis[type] = [];
+        }
+        groupedCis[type].push(ci);
+    });
+
+    container.innerHTML = `
+        <div class="alert alert-info border-0 shadow-sm mb-4">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                <div>
+                    <strong>Promoted Source Data:</strong> This screen displays the standardized, normalized, and published data from the <strong>Prepare</strong> phase. 
+                    The data is now presented in the structure of internal <strong>Data Entities and Fields</strong>, providing a solid foundation for creating AWIs and dependency links.
+                </div>
+            </div>
+        </div>
+        
+        ${entities.map(entity => {
+            const entityName = entity.name.toLowerCase();
+            // Try to match entity name with CI type
+            // e.g. "Virtual Server" -> "virtual_server"
+            const matchKey = entityName.replace(/\s+/g, '_');
+            const entityCis = groupedCis[matchKey] || groupedCis[entityName] || [];
+            
+            if (entityCis.length === 0) return '';
+            
+            return `
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 fw-bold text-dark">
+                                <i class="bi bi-database me-2 text-primary"></i>${entity.name}
+                            </h5>
+                            <span class="badge bg-light text-dark border">${entityCis.length} Records</span>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 small">
+                            <thead class="bg-light text-muted text-uppercase" style="font-size: 0.75rem;">
+                                <tr>
+                                    <th class="ps-4">Entity Anchor</th>
+                                    ${entity.fields.map(f => `<th>${f.name}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${entityCis.map(ci => `
+                                    <tr>
+                                        <td class="ps-4 fw-bold text-dark">${ci.name}</td>
+                                        ${entity.fields.map(f => {
+                                            const val = ci.properties[f.name] || '-';
+                                            return `<td>${val}</td>`;
+                                        }).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }).join('')}
+        
+        ${Object.keys(groupedCis).length === 0 ? `
+            <div class="text-center py-5">
+                <i class="bi bi-cloud-slash text-muted mb-3" style="font-size: 3rem;"></i>
+                <h5 class="text-muted">No promoted data found</h5>
+                <p class="text-muted small">Please complete the Publish step in the Prepare phase to promote data to Map.</p>
+                <button class="btn btn-outline-primary btn-sm mt-2" onclick="window.navigate('prepare')">Go to Prepare</button>
+            </div>
+        ` : ''}
+    `;
 }
 
 async function renderMapS2Ts(container) {

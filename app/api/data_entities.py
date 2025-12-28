@@ -1,9 +1,69 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, UploadFile, File, Response
 from app.schemas.data_entities import DataEntity, DataEntityCreate, DataEntityField, DataEntityFieldCreate
 from app.services.storage import storage
 from typing import List, Optional
+import pandas as pd
+import io
 
 router = APIRouter(prefix="/data-entities", tags=["Data Entities"])
+
+@router.get("/download")
+async def download_data_entities():
+    entities = storage.get_data_entities()
+    
+    # Prepare Data Entities sheet
+    entities_data = []
+    for e in entities:
+        key_field = next((f for f in e['fields'] if f['id'] == e['key_field_id']), None)
+        entities_data.append({
+            "Name": e['name'],
+            "Key Field": key_field['name'] if key_field else ""
+        })
+    
+    # Prepare Data Entity Fields sheet
+    fields_data = []
+    for e in entities:
+        for f in e['fields']:
+            fields_data.append({
+                "Name": f['name'],
+                "Data_Entity_Name": e['name'],
+                "Anchor_Field": f['anchor']
+            })
+            
+    df_entities = pd.DataFrame(entities_data)
+    df_fields = pd.DataFrame(fields_data)
+    
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_entities.to_excel(writer, sheet_name='Data Entities', index=False)
+        df_fields.to_excel(writer, sheet_name='Data Entity Fields', index=False)
+    
+    output.seek(0)
+    
+    headers = {
+        'Content-Disposition': 'attachment; filename="data_entities.xlsx"'
+    }
+    return Response(content=output.getvalue(), headers=headers, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+@router.post("/upload")
+async def upload_data_entities(file: UploadFile = File(...)):
+    contents = await file.read()
+    try:
+        df_entities = pd.read_excel(io.BytesIO(contents), sheet_name='Data Entities')
+        df_fields = pd.read_excel(io.BytesIO(contents), sheet_name='Data Entity Fields')
+        
+        # Handle NaN values
+        df_entities = df_entities.where(pd.notnull(df_entities), None)
+        df_fields = df_fields.where(pd.notnull(df_fields), None)
+        
+        entities_data = df_entities.to_dict(orient='records')
+        fields_data = df_fields.to_dict(orient='records')
+        
+        storage.override_data_entities(entities_data, fields_data)
+        
+        return {"message": "Data entities and fields successfully overridden"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("", response_model=List[DataEntity])
 async def list_entities():
